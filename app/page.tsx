@@ -4,7 +4,7 @@ export default function Home() {
       <main className="flex flex-col items-center justify-center gap-12 text-center">
         <div>
           <h1 className="text-5xl font-semibold tracking-tight text-black dark:text-white mb-4">
-            abioladeyeye
+            Abiola Adeyeye
           </h1>
           <p className="text-lg text-zinc-600 dark:text-zinc-400">
             Choose a section to explore
