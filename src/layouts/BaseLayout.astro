@@ -1,6 +1,5 @@
 ---
 import '../styles/global.css';
-import Nav from '../components/Nav.astro';
 
 interface Props {
   title?: string;
@@ -23,7 +22,6 @@ const {
     <title>{title}</title>
   </head>
   <body>
-    <Nav />
     <main>
       <slot />
     </main>
