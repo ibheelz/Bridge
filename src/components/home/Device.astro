@@ -6,11 +6,6 @@
 // Scale: JS-computed s = min(vw*0.9/1000, vh/684, 1.3) — no CSS media queries.
 // Centering offset when closed: -(G.W/4) * s = -250*s (matches Framer's R.dev translate)
 import HeroSection from './HeroSection.astro';
-import StatsSection from './StatsSection.astro';
-import WorkSection from './WorkSection.astro';
-import ServicesSection from './ServicesSection.astro';
-import ClientsSection from './ClientsSection.astro';
-import CtaSection from './CtaSection.astro';
 import LockScreen from './LockScreen.astro';
 import CallScreen from './CallScreen.astro';
 ---
@@ -43,11 +38,6 @@ import CallScreen from './CallScreen.astro';
             <div class="phone__crease phone__crease--R" aria-hidden="true"></div>
             <div class="phone__content" id="phoneContent">
               <HeroSection />
-              <StatsSection />
-              <WorkSection />
-              <ServicesSection />
-              <ClientsSection />
-              <CtaSection />
             </div>
           </div>
           <div class="phone__btn phone__btn--1" aria-hidden="true"></div>
