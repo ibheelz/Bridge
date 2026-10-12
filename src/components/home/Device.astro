@@ -20,12 +20,6 @@ import CallScreen from './CallScreen.astro';
       <div class="curtain__seam" id="curtainSeam"></div>
     </div>
 
-    <!-- Name words — wrapper animated as one unit during intro -->
-    <div class="names-wrap" id="introNames" aria-hidden="true">
-      <p class="name-bg name-bg--l">Abiola</p>
-      <p class="name-bg name-bg--r">Adeyeye</p>
-    </div>
-
     <!-- phone-wrap receives translateX centering (scroll) + intro transforms -->
     <div class="phone-wrap" id="phoneWrap">
       <div class="phone" id="phone">
@@ -132,34 +126,6 @@ import CallScreen from './CallScreen.astro';
     transform: scaleY(0);
     transform-origin: center center;
   }
-
-  /* ──────────────────────────────────────────
-     Ambient name words
-  ────────────────────────────────────────── */
-  .names-wrap {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    user-select: none;
-    opacity: 0;
-  }
-
-  .name-bg {
-    position: absolute;
-    font-family: var(--font-display);
-    font-size: clamp(64px, 12vw, var(--text-giant));
-    font-weight: 900;
-    line-height: var(--leading-giant);
-    letter-spacing: var(--tracking-display);
-    text-transform: uppercase;
-    color: #000;
-    opacity: 1;
-    top: 50%;
-    transform: translateY(-50%);
-    white-space: nowrap;
-  }
-  .name-bg--l { left: -1vw; }
-  .name-bg--r { right: -1vw; }
 
   /* ──────────────────────────────────────────
      Phone-wrap (translate + intro transforms)
@@ -403,7 +369,6 @@ import CallScreen from './CallScreen.astro';
   ────────────────────────────────────────── */
   @media (prefers-reduced-motion: reduce) {
     .curtain      { display: none !important; }
-    .names-wrap   { opacity: 1 !important; }
     .phone-wrap   { opacity: 1 !important; transform: none !important; }
     .phone__right { opacity: 1 !important; }
     .phone__left  { transform: rotateY(0deg) !important; }
@@ -503,10 +468,8 @@ import CallScreen from './CallScreen.astro';
   }
 
   // ─── Intro animation ────────────────────────────────────────────────────────
-  // Mirrors Framer FoldfolioDevice.playIntro() exactly.
   //   0ms    seam scaleY 0→1  (power3.out, 560ms)
   //  460ms   curtain L/R slide apart (power4.out, 860ms)
-  //  560ms   names opacity 0→1, y 56→0 (power4.out, 940ms)
   //  760ms   seam opacity 1→0 (linear, 300ms)
   //  820ms   phone rise+rotate+scale (power5.out, 1180ms)
   //  total 2300ms — cut short if user scrolls >60px
@@ -517,9 +480,8 @@ import CallScreen from './CallScreen.astro';
       const curtR     = document.getElementById('curtainR')     as HTMLElement;
       const seam      = document.getElementById('curtainSeam')  as HTMLElement;
       const phoneWrap = document.getElementById('phoneWrap')    as HTMLElement;
-      const namesWrap = document.getElementById('introNames')   as HTMLElement;
 
-      if (!curtain || !curtL || !curtR || !seam || !phoneWrap || !namesWrap) {
+      if (!curtain || !curtL || !curtR || !seam || !phoneWrap) {
         resolve(); return;
       }
 
@@ -528,7 +490,6 @@ import CallScreen from './CallScreen.astro';
       const far = vw / 2 + 4;
 
       gsap.set(phoneWrap, { y: vh * 0.5, rotation: -5, scale: 0.82, opacity: 0 });
-      gsap.set(namesWrap, { y: 56, opacity: 0 });
       gsap.set(seam,      { scaleY: 0, transformOrigin: 'center center' });
 
       let introTl: gsap.core.Timeline | null = null;
@@ -537,7 +498,6 @@ import CallScreen from './CallScreen.astro';
         if (introTl) { introTl.kill(); introTl = null; }
         curtain.style.display = 'none';
         gsap.set(phoneWrap, { y: 0, rotation: 0, scale: 1, opacity: 1 });
-        gsap.set(namesWrap, { y: 0, opacity: 1 });
         window.removeEventListener('scroll', onScroll);
         document.removeEventListener('visibilitychange', finish);
         resolve();
@@ -553,7 +513,6 @@ import CallScreen from './CallScreen.astro';
       introTl.to(seam, { opacity: 0, duration: 0.30, ease: 'none' }, 0.76);
       introTl.to(curtL, { x: -far, duration: 0.86, ease: 'power4.out' }, 0.46);
       introTl.to(curtR, { x:  far, duration: 0.86, ease: 'power4.out' }, 0.46);
-      introTl.to(namesWrap, { y: 0, opacity: 1, duration: 0.94, ease: 'power4.out' }, 0.56);
       introTl.to(phoneWrap, { y: 0, rotation: 0, scale: 1, opacity: 1, duration: 1.18, ease: 'power5.out' }, 0.82);
 
       window.setTimeout(finish, 2300 + 1500);
@@ -573,8 +532,7 @@ import CallScreen from './CallScreen.astro';
     if (reduced) {
       const curtain = document.getElementById('introCurtain');
       if (curtain) curtain.style.display = 'none';
-      gsap.set('#phoneWrap',  { x: 0, y: 0, rotation: 0, scale: 1, opacity: 1 });
-      gsap.set('#introNames', { y: 0, opacity: 1 });
+      gsap.set('#phoneWrap', { x: 0, y: 0, rotation: 0, scale: 1, opacity: 1 });
       initScroll(offset);
       return;
     }
@@ -603,10 +561,8 @@ import CallScreen from './CallScreen.astro';
     } else {
       const curtain = document.getElementById('introCurtain');
       if (curtain) curtain.style.display = 'none';
-      gsap.set('#phoneWrap',  { y: 0, rotation: 0, scale: 1 });
-      gsap.set('#introNames', { y: 0 });
+      gsap.set('#phoneWrap', { y: 0, rotation: 0, scale: 1 });
       gsap.to('#phoneWrap',  { opacity: 1, duration: 0.45, ease: 'power2.out', delay: 0.05 });
-      gsap.to('#introNames', { opacity: 1, duration: 0.55, ease: 'power2.out', delay: 0.2 });
     }
   }
 
