@@ -11,7 +11,7 @@
   <div class="lock__ui">
     <div class="lock__top">
       <p class="lock__clock">22:00</p>
-      <p class="lock__role">Brand, motion &amp; 3D · Lagos</p>
+      <p class="lock__role">IT Support &amp; Motion Designer</p>
     </div>
 
     <div class="lock__spacer"></div>
@@ -50,16 +50,14 @@
     position: relative;
     width: 100%;
     height: 100%;
-    background: rgb(240, 242, 241);
+    background: #fff;
     overflow: hidden;
     display: flex;
     flex-direction: column;
   }
 
   .lock__portrait {
-    position: absolute;
-    inset: 0;
-    background: var(--color-bone);
+    display: none;
   }
 
   .lock__ui {
@@ -85,7 +83,7 @@
     font-weight: 800;
     line-height: var(--leading-clock);
     letter-spacing: var(--tracking-display);
-    color: var(--color-ink);
+    color: #000;
     text-align: center;
   }
 
@@ -93,8 +91,7 @@
     font-family: var(--font-ui);
     font-size: var(--text-body);
     font-weight: 500;
-    color: var(--color-ink);
-    opacity: 0.6;
+    color: #000;
     text-align: center;
   }
 
@@ -103,7 +100,7 @@
   }
 
   .lock__notifications {
-    display: flex;
+    display: none;
     flex-direction: column;
     gap: 8px;
   }
