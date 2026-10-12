@@ -1,0 +1,74 @@
+---
+// Section 2 — Numbers / Stats (SPEC.md: Slot-Screen Section 2)
+// CHANGE: label and stat content need real data from Abiola.
+---
+
+<section class="stats" aria-label="Work in numbers">
+  <p class="stats__label">Work in numbers</p>
+  <div class="stats__grid">
+    <div class="stats__item">
+      <p class="stats__number">5+</p>
+      <p class="stats__desc">Years of experience</p>
+    </div>
+    <div class="stats__item">
+      <p class="stats__number">30+</p>
+      <p class="stats__desc">Projects completed</p>
+    </div>
+    <div class="stats__item">
+      <p class="stats__number">20+</p>
+      <p class="stats__desc">Happy clients</p>
+    </div>
+    <div class="stats__item">
+      <p class="stats__number">3</p>
+      <p class="stats__desc">Disciplines mastered</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .stats {
+    background: var(--color-ink);
+    padding: 44px var(--page-padding-x) 48px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-section);
+  }
+
+  .stats__label {
+    font-family: var(--font-mono);
+    font-size: var(--text-mono);
+    font-weight: 500;
+    letter-spacing: var(--tracking-mono);
+    text-transform: uppercase;
+    color: var(--color-paper);
+    opacity: 0.5;
+  }
+
+  .stats__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    row-gap: var(--gap-number-row);
+    column-gap: var(--gap-number-col);
+  }
+
+  .stats__number {
+    font-family: var(--font-display);
+    font-size: var(--text-m);
+    font-weight: 900;
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-title);
+    text-transform: uppercase;
+    color: var(--color-paper);
+  }
+
+  .stats__desc {
+    font-family: var(--font-mono);
+    font-size: var(--text-mono);
+    font-weight: 500;
+    letter-spacing: var(--tracking-mono);
+    text-transform: uppercase;
+    color: var(--color-paper);
+    opacity: 0.5;
+    margin-top: 4px;
+  }
+</style>

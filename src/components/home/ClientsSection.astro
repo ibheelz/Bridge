@@ -1,0 +1,53 @@
+---
+// Section 6 — Clients (SPEC.md: Slot-Screen Section 6)
+// CHANGE: replace placeholder client names with Abiola's real client list.
+---
+
+<section class="clients" aria-label="Trusted by">
+  <p class="clients__label">Trusted by</p>
+  <ul class="clients__chips">
+    <li><span class="clients__chip">Client Name</span></li>
+    <li><span class="clients__chip">Client Name</span></li>
+    <li><span class="clients__chip">Client Name</span></li>
+    <li><span class="clients__chip">Client Name</span></li>
+    <li><span class="clients__chip">Client Name</span></li>
+    <li><span class="clients__chip">Client Name</span></li>
+  </ul>
+</section>
+
+<style>
+  .clients {
+    background: var(--color-screen);
+    padding: 32px var(--page-padding-x) 44px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .clients__label {
+    font-family: var(--font-mono);
+    font-size: var(--text-mono);
+    font-weight: 500;
+    letter-spacing: var(--tracking-mono);
+    text-transform: uppercase;
+    color: var(--color-paper);
+    opacity: 0.5;
+  }
+
+  .clients__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gap-chip);
+  }
+
+  .clients__chip {
+    font-family: var(--font-ui);
+    font-size: var(--text-body);
+    font-weight: 500;
+    color: var(--color-paper);
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-pill);
+    padding: 11px 16px;
+    display: inline-block;
+  }
+</style>

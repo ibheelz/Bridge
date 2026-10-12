@@ -1,0 +1,121 @@
+---
+// Section 1 — Hero (SPEC.md: Slot-Screen Section 1)
+// CHANGE: No eyebrow. Name = Abiola Adeyeye.
+// PLACEHOLDER: tagline and portrait need real content.
+---
+
+<section class="hero" aria-label="Introduction">
+  <div class="hero__left">
+    <div class="hero__content">
+      <h1 class="hero__name">Abiola Adeyeye</h1>
+      <!-- PLACEHOLDER: replace with real tagline -->
+      <p class="hero__tagline">[tagline]</p>
+      <div class="hero__ctas">
+        <a href="#" class="hero__btn hero__btn--primary">See the work ↗</a>
+        <a href="#" class="hero__btn hero__btn--ghost">Say hello</a>
+      </div>
+    </div>
+  </div>
+  <!-- PLACEHOLDER: replace div with <img> when portrait is ready -->
+  <div class="hero__portrait" role="img" aria-label="Portrait of Abiola Adeyeye"></div>
+</section>
+
+<style>
+  .hero {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    background: var(--color-paper);
+  }
+
+  .hero__left {
+    flex: 1 0 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 80px var(--page-padding-x) 60px;
+    min-height: 480px;
+  }
+
+  .hero__content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 22px;
+  }
+
+  .hero__name {
+    font-family: var(--font-display);
+    font-size: clamp(52px, 10vw, var(--text-hero));
+    font-weight: 900;
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-title);
+    text-transform: uppercase;
+    color: var(--color-ink);
+    width: 100%;
+  }
+
+  .hero__tagline {
+    font-family: var(--font-ui);
+    font-size: var(--text-lead);
+    font-weight: 400;
+    line-height: var(--leading-lead);
+    color: rgba(17, 17, 17, 0.4);
+    max-width: 360px;
+  }
+
+  .hero__ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .hero__btn {
+    font-family: var(--font-ui);
+    font-size: var(--text-body);
+    font-weight: 500;
+    line-height: 1;
+    border-radius: var(--radius-pill);
+    padding: 13px 20px;
+    display: inline-flex;
+    align-items: center;
+    transition: opacity 0.15s ease;
+  }
+
+  .hero__btn--primary {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+
+  .hero__btn--ghost {
+    background: rgba(17, 17, 17, 0.07);
+    color: var(--color-ink);
+  }
+
+  .hero__portrait {
+    flex: 0 0 488px;
+    min-width: 300px;
+    background: var(--color-bone);
+    min-height: 360px;
+  }
+
+  /* Mobile: portrait stacks below */
+  @media (max-width: 599px) {
+    .hero__portrait {
+      flex-basis: 100%;
+      min-width: 0;
+      height: 280px;
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .hero__left {
+      padding: 76px var(--page-padding-x) 100px;
+      min-height: 660px;
+    }
+
+    .hero__content {
+      width: 87%;
+    }
+  }
+</style>

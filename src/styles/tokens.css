@@ -1,0 +1,87 @@
+/* ================================================================
+   DESIGN TOKENS — abioladeyeye.com
+   Source: SPEC.md > Design Tokens  (all values KEEP)
+   ================================================================ */
+
+:root {
+  /* ---- Colors -------------------------------------------------- */
+  --color-ink:              rgb(17, 17, 17);
+  --color-paper:            rgb(255, 255, 255);
+  --color-bone:             rgb(244, 243, 240);
+  --color-screen:           rgb(11, 11, 11);
+  --color-accent-signal:    rgb(47, 203, 104);
+  --color-accent-call:      rgb(52, 199, 89);
+  --color-accent-pulse:     rgb(245, 197, 24);
+  --color-device-titanium:  rgb(220, 217, 211);
+  --color-device-glass:     rgb(5, 5, 5);
+  --color-device-edge:      rgb(166, 162, 155);
+
+  /* ---- Typography — Families ----------------------------------- */
+  --font-display: 'Sofia Sans Extra Condensed', sans-serif;
+  --font-ui:      'Geist', sans-serif;
+  --font-mono:    'Geist Mono', monospace;
+
+  /* ---- Typography — Display sizes ------------------------------ */
+  --text-giant:     300px;  /* /Display/Giant        */
+  --text-huge:      200px;  /* /Display/Huge         */
+  --text-number:    224px;  /* /Display/Number       */
+  --text-number-s:  150px;  /* /Display/Number S     */
+  --text-giant-m:   210px;  /* /Display/Giant M      */
+  --text-giant-s:   132px;  /* /Display/Giant S      */
+  --text-clock:     132px;  /* /Display/Clock        */
+  --text-xl:        125px;  /* /Display/XL           */
+  --text-hero:      118px;  /* /Display/Hero         */
+  --text-l:         112px;  /* /Display/L            */
+  --text-loud:      104px;  /* /Display/Loud         */
+  --text-title:      86px;  /* /Display/Title        */
+  --text-m:          73px;  /* /Display/M            */
+  --text-s:          72px;  /* /Display/S            */
+  --text-statement:  70px;  /* /Display/Statement    */
+  --text-clock-s:    76px;  /* /Display/Clock Ink S  */
+  --text-stat:       50px;  /* /Display/Stat         */
+  --text-xs:         46px;  /* /Display/XS           */
+  --text-card:       30px;  /* /Display/Card         */
+  --text-logo:       22px;  /* /Display/Logo         */
+
+  /* ---- Typography — UI sizes ----------------------------------- */
+  --text-large:  24px;   /* /UI/Large  */
+  --text-lead:   15px;   /* /UI/Lead   */
+  --text-body:   13px;   /* /UI/Body   */
+  --text-mono:   11px;   /* /UI/Mono   */
+
+  /* ---- Typography — Line heights ------------------------------- */
+  --leading-giant:      0.8em;
+  --leading-display:    0.84em;
+  --leading-statement:  0.86em;
+  --leading-card:       0.9em;
+  --leading-clock:      0.9em;
+  --leading-logo:       1em;
+  --leading-large:      1.1em;
+  --leading-mono:       1.2em;
+  --leading-body:       1.3em;
+  --leading-lead:       1.5em;
+
+  /* ---- Typography — Letter spacing ----------------------------- */
+  --tracking-display:  -0.01em;
+  --tracking-title:    -0.005em;
+  --tracking-mono:      0.06em;
+  --tracking-large:    -0.01em;
+
+  /* ---- Layout -------------------------------------------------- */
+  --page-padding-x:  29px;
+  --nav-height:      64px;
+
+  /* ---- Radii --------------------------------------------------- */
+  --radius-pill:          999px;
+  --radius-card:           14px;
+  --radius-cta:            18px;
+  --radius-notification:   18px;
+  --radius-thumb:           9px;
+
+  /* ---- Gaps ---------------------------------------------------- */
+  --gap-section:    18px;   /* section label → content  */
+  --gap-number-row: 28px;
+  --gap-number-col: 18px;
+  --gap-service:     8px;
+  --gap-chip:        8px;
+}

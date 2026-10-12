@@ -1,0 +1,93 @@
+---
+// Section 5 — Services (SPEC.md: Slot-Screen Section 5)
+// CHANGE: services = "IT Support | Motion Designer & Animator" per user instruction
+---
+
+<section class="services" aria-label="What I do">
+  <p class="services__label">What I do</p>
+  <div class="services__list">
+    <div class="services__card">
+      <span class="services__num">01</span>
+      <h3 class="services__name">IT Support</h3>
+      <p class="services__desc">Technical setup, systems troubleshooting, and infrastructure support for teams and creatives who need things to just work.</p>
+    </div>
+    <div class="services__card">
+      <span class="services__num">02</span>
+      <h3 class="services__name">Motion Design</h3>
+      <p class="services__desc">Motion graphics and animation for brands — from short social cuts to full broadcast title sequences.</p>
+    </div>
+    <div class="services__card">
+      <span class="services__num">03</span>
+      <h3 class="services__name">Animation</h3>
+      <p class="services__desc">Character, product and explainer animation that brings concepts to life across any screen or format.</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .services {
+    background: var(--color-screen);
+    padding: 72px var(--page-padding-x) 24px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-section);
+  }
+
+  .services__label {
+    font-family: var(--font-mono);
+    font-size: var(--text-mono);
+    font-weight: 500;
+    letter-spacing: var(--tracking-mono);
+    text-transform: uppercase;
+    color: var(--color-paper);
+    opacity: 0.5;
+  }
+
+  .services__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-service);
+  }
+
+  .services__card {
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-card);
+    padding: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: 8px;
+    column-gap: 18px;
+    align-items: baseline;
+  }
+
+  .services__num {
+    font-family: var(--font-mono);
+    font-size: var(--text-mono);
+    font-weight: 500;
+    letter-spacing: var(--tracking-mono);
+    text-transform: uppercase;
+    color: var(--color-paper);
+    opacity: 0.4;
+    flex: 0 0 34px;
+  }
+
+  .services__name {
+    font-family: var(--font-display);
+    font-size: var(--text-card);
+    font-weight: 900;
+    line-height: var(--leading-card);
+    text-transform: uppercase;
+    color: var(--color-paper);
+    flex: 1 0 160px;
+  }
+
+  .services__desc {
+    font-family: var(--font-ui);
+    font-size: var(--text-body);
+    font-weight: 500;
+    line-height: var(--leading-body);
+    color: var(--color-paper);
+    opacity: 0.6;
+    flex: 1 0 220px;
+  }
+</style>

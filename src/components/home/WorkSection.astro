@@ -1,0 +1,179 @@
+---
+// Sections 3+4 — Selected Work header + project cards (SPEC.md)
+// CHANGE: replace placeholder project data with Abiola's real projects.
+---
+
+<section class="work" aria-label="Selected work">
+  <!-- Section 3: header row -->
+  <div class="work__header">
+    <h2 class="work__heading">Selected work</h2>
+    <a href="/work" class="work__all">All projects ↗</a>
+  </div>
+
+  <!-- Section 4: project cards -->
+  <div class="work__cards">
+    <!-- Card 1 -->
+    <article class="work__row">
+      <div class="work__img" role="img" aria-label="Project 1 image placeholder"></div>
+      <div class="work__info" style="background: rgb(47,91,216);">
+        <p class="work__index">01</p>
+        <div class="work__meta">
+          <p class="work__type">Brand Identity</p>
+          <h3 class="work__title">Project Name</h3>
+          <p class="work__desc">A short description of the project and what made it interesting to work on.</p>
+          <a href="#" class="work__link">View project ↗</a>
+        </div>
+      </div>
+    </article>
+
+    <!-- Card 2 -->
+    <article class="work__row work__row--flip">
+      <div class="work__img" role="img" aria-label="Project 2 image placeholder"></div>
+      <div class="work__info" style="background: rgb(180,60,40);">
+        <p class="work__index">02</p>
+        <div class="work__meta">
+          <p class="work__type">Motion</p>
+          <h3 class="work__title">Project Name</h3>
+          <p class="work__desc">A short description of the project and what made it interesting to work on.</p>
+          <a href="#" class="work__link">View project ↗</a>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<style>
+  .work {
+    background: var(--color-screen);
+  }
+
+  .work__header {
+    padding: 64px var(--page-padding-x) 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .work__heading {
+    font-family: var(--font-display);
+    font-size: clamp(56px, 11vw, var(--text-l));
+    font-weight: 900;
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-title);
+    text-transform: uppercase;
+    color: var(--color-paper);
+  }
+
+  .work__all {
+    font-family: var(--font-ui);
+    font-size: var(--text-body);
+    font-weight: 500;
+    color: var(--color-paper);
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-pill);
+    padding: 10px 16px;
+    white-space: nowrap;
+  }
+
+  .work__row {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .work__img {
+    flex: 1 0 300px;
+    min-height: 360px;
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  @media (min-width: 600px) {
+    .work__img {
+      min-height: 600px;
+    }
+  }
+
+  .work__info {
+    flex: 1 0 300px;
+    min-height: 360px;
+    padding: 40px 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  @media (min-width: 600px) {
+    .work__info {
+      min-height: 600px;
+    }
+  }
+
+  .work__row--flip .work__img {
+    order: 1;
+  }
+
+  @media (max-width: 599px) {
+    .work__row--flip .work__img {
+      order: 0;
+    }
+  }
+
+  .work__index {
+    font-family: var(--font-display);
+    font-size: clamp(80px, 15vw, var(--text-number));
+    font-weight: 900;
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-display);
+    text-transform: uppercase;
+    color: var(--color-paper);
+    opacity: 0.4;
+  }
+
+  .work__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .work__type {
+    font-family: var(--font-mono);
+    font-size: var(--text-mono);
+    font-weight: 500;
+    letter-spacing: var(--tracking-mono);
+    text-transform: uppercase;
+    color: var(--color-paper);
+    opacity: 0.6;
+  }
+
+  .work__title {
+    font-family: var(--font-display);
+    font-size: var(--text-m);
+    font-weight: 900;
+    line-height: var(--leading-display);
+    letter-spacing: var(--tracking-title);
+    text-transform: uppercase;
+    color: var(--color-paper);
+  }
+
+  .work__desc {
+    font-family: var(--font-ui);
+    font-size: var(--text-body);
+    font-weight: 500;
+    line-height: var(--leading-body);
+    color: var(--color-paper);
+    opacity: 0.7;
+    max-width: 340px;
+    margin-top: 4px;
+  }
+
+  .work__link {
+    font-family: var(--font-mono);
+    font-size: var(--text-mono);
+    font-weight: 500;
+    letter-spacing: var(--tracking-mono);
+    text-transform: uppercase;
+    color: var(--color-paper);
+    margin-top: 16px;
+  }
+</style>

@@ -1,0 +1,53 @@
+---
+// Section 7 — CTA Card (SPEC.md: Slot-Screen Section 7)
+// CHANGE: headline copy needs Abiola's own CTA line.
+---
+
+<section class="cta-wrap" aria-label="Start a project">
+  <div class="cta-card">
+    <h2 class="cta-card__headline">Have a brief that needs a pulse?</h2>
+    <a href="/contact" class="cta-card__btn">Start a project ↗</a>
+  </div>
+</section>
+
+<style>
+  .cta-wrap {
+    background: var(--color-screen);
+    padding: 0 var(--page-padding-x) 124px;
+  }
+
+  .cta-card {
+    background: var(--color-paper);
+    border-radius: var(--radius-cta);
+    padding: 30px 28px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .cta-card__headline {
+    font-family: var(--font-display);
+    font-size: var(--text-card);
+    font-weight: 900;
+    line-height: var(--leading-card);
+    text-transform: uppercase;
+    color: var(--color-ink);
+    flex: 1 0 220px;
+  }
+
+  .cta-card__btn {
+    font-family: var(--font-ui);
+    font-size: var(--text-body);
+    font-weight: 500;
+    line-height: 1;
+    color: var(--color-paper);
+    background: var(--color-ink);
+    border-radius: var(--radius-pill);
+    padding: 13px 20px;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+</style>

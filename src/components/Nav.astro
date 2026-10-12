@@ -1,0 +1,60 @@
+---
+// Placeholder — Nav internals pending Framer read (SPEC.md TODO)
+---
+
+<header class="nav">
+  <nav class="nav__inner" aria-label="Main navigation">
+    <a href="/" class="nav__logo">AA</a>
+    <ul class="nav__links">
+      <li><a href="/">Work</a></li>
+      <li><a href="/">About</a></li>
+      <li><a href="/">Contact</a></li>
+    </ul>
+  </nav>
+</header>
+
+<style>
+  .nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: var(--nav-height);
+    z-index: 10;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav__inner {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--page-padding-x);
+  }
+
+  .nav__logo {
+    font-family: var(--font-display);
+    font-size: var(--text-logo);
+    font-weight: 900;
+    line-height: var(--leading-logo);
+    text-transform: uppercase;
+    letter-spacing: 0;
+  }
+
+  .nav__links {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .nav__links a {
+    font-family: var(--font-mono);
+    font-size: var(--text-mono);
+    font-weight: 500;
+    letter-spacing: var(--tracking-mono);
+    text-transform: uppercase;
+  }
+</style>
