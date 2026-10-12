@@ -32,6 +32,8 @@ import CallScreen from './CallScreen.astro';
 
         <!-- ── RIGHT HALF (static, shows screen content) ── -->
         <div class="phone__right" id="phoneRight">
+          <div class="phone__btn phone__btn--1" aria-hidden="true"></div>
+          <div class="phone__btn phone__btn--2" aria-hidden="true"></div>
           <div class="phone__slab phone__slab--R" aria-hidden="true"></div>
           <div class="phone__glass phone__glass--R" aria-hidden="true"></div>
           <div class="phone__viewport" id="phoneViewport">
@@ -40,23 +42,20 @@ import CallScreen from './CallScreen.astro';
               <HeroSection />
             </div>
           </div>
-          <div class="phone__btn phone__btn--1" aria-hidden="true"></div>
-          <div class="phone__btn phone__btn--2" aria-hidden="true"></div>
         </div>
 
         <!-- ── LEFT LEAF (folds; card-flip cover / inner faces) ── -->
         <div class="phone__left" id="phoneLeft">
           <!-- Cover face: back face (rotateY 180+180=360 = facing viewer when parent folded) -->
           <div class="phone__face phone__face--cover">
+            <div class="phone__btn phone__btn--1" aria-hidden="true"></div>
+            <div class="phone__btn phone__btn--2" aria-hidden="true"></div>
             <div class="phone__slab phone__slab--C" aria-hidden="true"></div>
             <div class="phone__glass phone__glass--C" aria-hidden="true"></div>
             <div class="phone__cover-screen">
               <div class="phone__crease phone__crease--C" aria-hidden="true"></div>
               <LockScreen />
             </div>
-            <!-- Buttons on the cover face: right:-3 maps to outer right edge after double-flip -->
-            <div class="phone__btn phone__btn--1" aria-hidden="true"></div>
-            <div class="phone__btn phone__btn--2" aria-hidden="true"></div>
           </div>
           <!-- Inner face: front face, briefly visible during fold transition -->
           <div class="phone__face phone__face--inner" aria-hidden="true">
@@ -67,13 +66,13 @@ import CallScreen from './CallScreen.astro';
 
         <!-- ── CALL SCREEN (at right-half position; fades in when refold complete) ── -->
         <div class="phone__call" id="phoneCall">
+          <div class="phone__btn phone__btn--1" aria-hidden="true"></div>
+          <div class="phone__btn phone__btn--2" aria-hidden="true"></div>
           <div class="phone__slab phone__slab--C" aria-hidden="true"></div>
           <div class="phone__glass phone__glass--C" aria-hidden="true"></div>
           <div class="phone__call-inner">
             <CallScreen />
           </div>
-          <div class="phone__btn phone__btn--1" aria-hidden="true"></div>
-          <div class="phone__btn phone__btn--2" aria-hidden="true"></div>
         </div>
 
       </div>
@@ -335,7 +334,6 @@ import CallScreen from './CallScreen.astro';
     border-radius: 3px;
     background: linear-gradient(90deg, #292725 0%, #55534F 45%, #343230 100%);
     box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.5);
-    z-index: 7;
   }
   /* Top button: 17% from top, 10% tall */
   .phone__btn--1 { top: 17%; height: 10%; }
