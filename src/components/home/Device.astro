@@ -77,8 +77,8 @@ import CallScreen from './CallScreen.astro';
 
         <!-- ── CALL SCREEN (at right-half position; fades in when refold complete) ── -->
         <div class="phone__call" id="phoneCall">
-          <div class="phone__slab phone__slab--R" aria-hidden="true"></div>
-          <div class="phone__glass phone__glass--R" aria-hidden="true"></div>
+          <div class="phone__slab phone__slab--C" aria-hidden="true"></div>
+          <div class="phone__glass phone__glass--C" aria-hidden="true"></div>
           <div class="phone__call-inner">
             <CallScreen />
           </div>
@@ -401,15 +401,13 @@ import CallScreen from './CallScreen.astro';
     will-change: opacity;
   }
 
-  /* Screen area inset: insets(12,"L") → top:12 right:12 bottom:12 left:0; corners: 0 34 34 0 */
+  /* Screen area inset: inset:12 all sides; corners: 34 all sides */
   .phone__call-inner {
     position: absolute;
-    top: 12px;
-    right: 12px;
-    bottom: 12px;
-    left: 0;
-    border-radius: 0px 34px 34px 0px;
+    inset: 12px;
+    border-radius: 34px;
     overflow: hidden;
+    background: #000;
   }
 
   /* ──────────────────────────────────────────
