@@ -20,12 +20,13 @@ import CallScreen from './CallScreen.astro';
         <div class="phone__right" id="phoneRight">
           <div class="phone__btn phone__btn--1" aria-hidden="true"></div>
           <div class="phone__btn phone__btn--2" aria-hidden="true"></div>
-          <div class="phone__slab phone__slab--R" aria-hidden="true"></div>
-          <div class="phone__glass phone__glass--R" aria-hidden="true"></div>
+          <div class="phone__slab phone__slab--R" id="phoneSlabR" aria-hidden="true"></div>
+          <div class="phone__glass phone__glass--R" id="phoneGlassR" aria-hidden="true"></div>
           <div class="phone__viewport" id="phoneViewport">
             <div class="phone__crease phone__crease--R" aria-hidden="true"></div>
             <div class="phone__content" id="phoneContent"></div>
           </div>
+          <div class="phone__shade phone__shade--R" id="phoneShadeR" aria-hidden="true"></div>
         </div>
 
         <!-- ── LEFT LEAF (folds; card-flip cover / inner faces) ── -->
@@ -47,6 +48,7 @@ import CallScreen from './CallScreen.astro';
             <div class="phone__slab phone__slab--L" aria-hidden="true"></div>
             <div class="phone__glass phone__glass--L" aria-hidden="true"></div>
             <div class="phone__inner-screen"></div>
+            <div class="phone__shade phone__shade--L" id="phoneShadeL" aria-hidden="true"></div>
           </div>
         </div>
 
@@ -136,10 +138,11 @@ import CallScreen from './CallScreen.astro';
       0 0 0 1px rgba(0, 0, 0, 0.65);
   }
 
-  /* Right half slab: insets(0,"L") → inset:0; corners: 0 46 46 0 */
+  /* Right half slab: starts all-rounded (closed); snaps to 0 46 46 0 at 90° via JS + CSS transition */
   .phone__slab--R {
     inset: 0;
-    border-radius: 0px 46px 46px 0px;
+    border-radius: 46px 46px 46px 46px;
+    transition: border-radius .35s cubic-bezier(.2,.7,.2,1);
   }
 
   /* Cover/all slab: insets(0,"none") → inset:0; corners: 46 46 46 46 */
@@ -160,13 +163,14 @@ import CallScreen from './CallScreen.astro';
     background: #050505;
   }
 
-  /* Right: insets(4,"L") → top:4 right:4 bottom:4 left:0; corners: 0 42 42 0 */
+  /* Right: insets(4,"L") → top:4 right:4 bottom:4 left:0; starts all-rounded, snaps at 90° */
   .phone__glass--R {
     top: 4px;
     right: 4px;
     bottom: 4px;
     left: 0;
-    border-radius: 0px 42px 42px 0px;
+    border-radius: 42px 42px 42px 42px;
+    transition: border-radius .35s cubic-bezier(.2,.7,.2,1);
   }
 
   /* Cover/all: insets(4,"none") → inset:4; corners: 42 42 42 42 */
@@ -185,19 +189,20 @@ import CallScreen from './CallScreen.astro';
   }
 
   /* ── Screen viewport (right half content area) ── */
-  /* insets(12,"L") → top:12 right:12 bottom:12 left:0; corners: 0 34 34 0 */
+  /* insets(12,"L") → top:12 right:12 bottom:12 left:0; starts all-rounded, snaps at 90° */
   .phone__viewport {
     position: absolute;
     top: 12px;
     right: 12px;
     bottom: 12px;
     left: 0;
-    border-radius: 0px 34px 34px 0px;
+    border-radius: 34px 34px 34px 34px;
     overflow: hidden;
     background: #1a1a1a;
+    transition: border-radius .35s cubic-bezier(.2,.7,.2,1);
   }
 
-  /* Left inner screen: insets(12,"R") → top:12 left:12 bottom:12 right:0; corners: 34 0 0 34 */
+  /* Left inner screen: insets(12,"R"); hinge corners = 0px */
   .phone__inner-screen {
     position: absolute;
     top: 12px;
@@ -301,6 +306,18 @@ import CallScreen from './CallScreen.astro';
   }
 
   /* ── Call screen overlay (same position as right half / cover) ── */
+  /* ── Fold shades (Framer: sin(th)^1.8 * 0.5 — peaks at 90°, hides corner artifacts) ── */
+  .phone__shade {
+    position: absolute;
+    inset: 0;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+    will-change: opacity;
+  }
+  .phone__shade--R { border-radius: 46px 46px 46px 46px; z-index: 8; transition: border-radius .35s cubic-bezier(.2,.7,.2,1); }
+  .phone__shade--L { border-radius: 46px 0px 0px 46px; z-index: 8; }
+
   /* Black screen that fades over the lock screen on refold */
   .phone__cover-call {
     position: absolute;
@@ -362,6 +379,10 @@ import CallScreen from './CallScreen.astro';
     const content    = document.getElementById('phoneContent')!;
     const viewport   = document.getElementById('phoneViewport')!;
     const coverCall  = document.getElementById('phoneCoverCall')!;
+    const shadeR     = document.getElementById('phoneShadeR')!;
+    const shadeL     = document.getElementById('phoneShadeL')!;
+    const slabR      = document.getElementById('phoneSlabR')!;
+    const glassR     = document.getElementById('phoneGlassR')!;
 
     if (!driver || !stage || !wrap || !right || !left || !content || !coverCall) return;
 
@@ -391,9 +412,19 @@ import CallScreen from './CallScreen.astro';
     });
 
     // Phase 1 — unfold: center the device (x→0), rotate leaf open, fade in right screen
-    tl.to(wrap,  { x: 0,        ease: 'power2.inOut', duration: U1 }, 0);
-    tl.to(left,  { rotateY: 0,  ease: 'power2.inOut', duration: U1 }, 0);
-    tl.to(right, { opacity: 1,  ease: 'none',          duration: 0.05      }, 0);
+    tl.to(wrap,  { x: 0,       ease: 'power2.inOut', duration: U1 }, 0);
+    tl.to(left,  { rotateY: 0, ease: 'power2.inOut', duration: U1 }, 0);
+    tl.to(right, { opacity: 1, ease: 'none',          duration: 0.05 }, 0);
+    // Shades peak at 85° (0.47 of unfold), then clear
+    tl.to(shadeR, { opacity: 0.45, ease: 'power2.in',  duration: U1 * 0.5 }, 0);
+    tl.to(shadeR, { opacity: 0,    ease: 'power2.out', duration: U1 * 0.5 }, U1 * 0.5);
+    tl.to(shadeL, { opacity: 0.45, ease: 'power2.in',  duration: U1 * 0.5 }, 0);
+    tl.to(shadeL, { opacity: 0,    ease: 'power2.out', duration: U1 * 0.5 }, U1 * 0.5);
+    // At 85° of unfold: snap right-half hinge corners to flat
+    tl.set(slabR,    { borderRadius: '0px 46px 46px 0px' }, U1 * 0.5);
+    tl.set(glassR,   { borderRadius: '0px 42px 42px 0px' }, U1 * 0.5);
+    tl.set(viewport, { borderRadius: '0px 34px 34px 0px' }, U1 * 0.5);
+    tl.set(shadeR,   { borderRadius: '0px 46px 46px 0px' }, U1 * 0.5);
 
     // Phase 2 — scroll content inside device
     if (innerPx > 0) {
@@ -402,11 +433,20 @@ import CallScreen from './CallScreen.astro';
 
     // Phase 3 — refold: fade right screen, rotate leaf closed, re-center, reveal call
     const closeAt = U1 + U_scroll + U_hold;
-    tl.to(right, { opacity: 0,   ease: 'power1.out',  duration: U2 * 0.4  }, closeAt);
-    tl.to(left,  { rotateY: 180, ease: 'power2.inOut', duration: U2        }, closeAt);
-    tl.to(wrap,  { x: offset,   ease: 'power2.inOut', duration: U2        }, closeAt);
-    // Black screen fades in at refold start, covering the lock screen
-    tl.to(coverCall, { opacity: 1, pointerEvents: 'auto', ease: 'power2.in', duration: U2 * 0.5 }, closeAt);
+    tl.to(left,  { rotateY: 180, ease: 'power2.inOut', duration: U2       }, closeAt);
+    tl.to(wrap,  { x: offset,   ease: 'power2.inOut', duration: U2       }, closeAt);
+    // Shades peak at 85° of refold (0.47)
+    tl.to(shadeR, { opacity: 0.45, ease: 'power2.in',  duration: U2 * 0.5 }, closeAt);
+    tl.to(shadeR, { opacity: 0,    ease: 'power2.out', duration: U2 * 0.5 }, closeAt + U2 * 0.5);
+    tl.to(shadeL, { opacity: 0.45, ease: 'power2.in',  duration: U2 * 0.5 }, closeAt);
+    tl.to(shadeL, { opacity: 0,    ease: 'power2.out', duration: U2 * 0.5 }, closeAt + U2 * 0.5);
+    // At 85° of refold: snap right-half corners back to all-rounded
+    tl.set(slabR,    { borderRadius: '46px 46px 46px 46px' }, closeAt + U2 * 0.5);
+    tl.set(glassR,   { borderRadius: '42px 42px 42px 42px' }, closeAt + U2 * 0.5);
+    tl.set(viewport, { borderRadius: '34px 34px 34px 34px' }, closeAt + U2 * 0.5);
+    tl.set(shadeR,   { borderRadius: '46px 46px 46px 46px' }, closeAt + U2 * 0.5);
+    // Black screen snaps on instantly when refold begins — no fade
+    tl.set(coverCall, { opacity: 1, pointerEvents: 'auto' }, closeAt);
 
     // Phase 4 — hold at call screen
     tl.to({}, { duration: U3 }, closeAt + U2);
@@ -511,11 +551,22 @@ import CallScreen from './CallScreen.astro';
       const phone      = document.getElementById('phone') as HTMLElement | null;
       if (!phone) return;
       const off = closedX(phone);
+      const shadeR2    = document.getElementById('phoneShadeR');
+      const shadeL2    = document.getElementById('phoneShadeL');
+      const slabR2     = document.getElementById('phoneSlabR');
+      const glassR2    = document.getElementById('phoneGlassR');
+      const viewport2  = document.getElementById('phoneViewport');
       if (wrap)      gsap.set(wrap,      { x: off, y: 0, rotation: 0, scale: 1, opacity: 1 });
       if (right)     gsap.set(right,     { opacity: 0 });
       if (left)      gsap.set(left,      { rotateY: 180 });
       if (content)   gsap.set(content,   { y: 0 });
       if (coverCall) gsap.set(coverCall, { opacity: 0, pointerEvents: 'none' });
+      if (shadeR2)   gsap.set(shadeR2,   { opacity: 0 });
+      if (shadeL2)   gsap.set(shadeL2,   { opacity: 0 });
+      if (slabR2)    gsap.set(slabR2,    { borderRadius: '46px 46px 46px 46px' });
+      if (glassR2)   gsap.set(glassR2,   { borderRadius: '42px 42px 42px 42px' });
+      if (viewport2) gsap.set(viewport2, { borderRadius: '34px 34px 34px 34px' }); /* initScroll resets to all-rounded */
+      if (shadeR2)   gsap.set(shadeR2,   { borderRadius: '46px 46px 46px 46px' });
       if (driver)    driver.style.height = '';
       initScroll(off);
     }, 300);
