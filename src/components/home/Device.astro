@@ -329,12 +329,152 @@ import CallScreen from './CallScreen.astro';
   }
 
   /* ──────────────────────────────────────────
+     Portrait mode (mobile: vw/vh < 0.85)
+     Framer GEO.portrait: W=380 H=740 f=4 bz=7 T=10 R=42
+     Each half: 380×370. Leaf folds on X axis (top flips over bottom).
+     cLeaf = "42 42 0 0"  (outer-top rounded, hinge-bottom flat)
+     cRight = "0 0 42 42" (hinge-top flat, outer-bottom rounded)
+  ────────────────────────────────────────── */
+  .phone--portrait {
+    width: 380px;
+    height: 740px;
+    perspective: 2000px;
+  }
+
+  /* Bottom half: occupies lower 370px */
+  .phone--portrait .phone__right {
+    left: 0;
+    top: 370px;
+    width: 380px;
+    height: 370px;
+  }
+
+  /* Top leaf: flips on X axis, hinge at bottom */
+  .phone--portrait .phone__left {
+    left: 0;
+    top: 0;
+    width: 380px;
+    height: 370px;
+    transform-origin: center bottom;
+    transform: rotateX(-180deg);
+  }
+
+  /* Cover face rotates on X to face viewer when leaf is closed */
+  .phone--portrait .phone__face--cover {
+    transform: rotateX(180deg);
+  }
+
+  /* ── Portrait slab radii ── */
+  /* Bottom half (right): starts all-rounded, snaps to "0 0 42 42" at 90° */
+  .phone--portrait .phone__slab--R {
+    border-radius: 42px 42px 42px 42px;
+  }
+  /* Top leaf inner: outer-top rounded, hinge-bottom flat */
+  .phone--portrait .phone__slab--L {
+    border-radius: 42px 42px 0px 0px;
+  }
+  /* Cover face slab: all-rounded */
+  .phone--portrait .phone__slab--C {
+    border-radius: 42px;
+  }
+
+  /* ── Portrait glass radii ── */
+  /* Bottom half: hinge at top (flush), sides/bottom inset 4px; starts all-rounded */
+  .phone--portrait .phone__glass--R {
+    top: 0;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+    border-radius: 38px 38px 38px 38px;
+  }
+  /* Top inner face: sides/top inset 4px, hinge at bottom (flush) */
+  .phone--portrait .phone__glass--L {
+    top: 4px;
+    left: 4px;
+    right: 4px;
+    bottom: 0;
+    border-radius: 38px 38px 0px 0px;
+  }
+  /* Cover face glass: all-rounded inset 4px */
+  .phone--portrait .phone__glass--C {
+    inset: 4px;
+    border-radius: 38px;
+  }
+
+  /* ── Portrait viewport / screens ── */
+  /* Bottom viewport: hinge at top (flush), sides/bottom inset 10px */
+  .phone--portrait .phone__viewport {
+    top: 0;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    border-radius: 32px 32px 32px 32px;
+  }
+  /* Top inner screen: sides/top inset 10px, hinge at bottom (flush) */
+  .phone--portrait .phone__inner-screen {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    bottom: 0;
+    border-radius: 32px 32px 0px 0px;
+  }
+  /* Cover screen: all-rounded, inset 10px */
+  .phone--portrait .phone__cover-screen {
+    inset: 10px;
+    border-radius: 32px;
+  }
+
+  /* ── Portrait creases (horizontal at hinge) ── */
+  .phone--portrait .phone__crease--R {
+    top: -36px;
+    bottom: unset;
+    left: 0;
+    right: 0;
+    width: unset;
+    height: 72px;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(0, 0, 0, 0.008) 35%,
+      rgba(0, 0, 0, 0.016) 50%,
+      rgba(0, 0, 0, 0.008) 65%,
+      transparent 100%
+    );
+  }
+  /* Cover crease: at local-bottom of cover face (= visual hinge after rotateX flip) */
+  .phone--portrait .phone__crease--C {
+    bottom: -36px;
+    top: unset;
+    left: 0;
+    right: 0;
+    width: unset;
+    height: 72px;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(0, 0, 0, 0.008) 35%,
+      rgba(0, 0, 0, 0.016) 50%,
+      rgba(0, 0, 0, 0.008) 65%,
+      transparent 100%
+    );
+  }
+
+  /* ── Portrait shades ── */
+  .phone--portrait .phone__shade--R { border-radius: 42px 42px 42px 42px; }
+  .phone--portrait .phone__shade--L { border-radius: 42px 42px 0px 0px; }
+
+  /* ── Portrait buttons — shifted for shorter half height ── */
+  .phone--portrait .phone__btn--1 { top: 22%; height: 12%; }
+  .phone--portrait .phone__btn--2 { top: 40%; height: 7%; }
+
+  /* ──────────────────────────────────────────
      Reduced motion — skip all animation
   ────────────────────────────────────────── */
   @media (prefers-reduced-motion: reduce) {
     .phone-wrap   { opacity: 1 !important; transform: none !important; }
     .phone__right { opacity: 1 !important; }
     .phone__left  { transform: rotateY(0deg) !important; }
+    .phone--portrait .phone__left { transform: rotateX(0deg) !important; }
     .phone__call  { opacity: 0 !important; }
   }
 </style>
@@ -345,60 +485,74 @@ import CallScreen from './CallScreen.astro';
 
   gsap.registerPlugin(ScrollTrigger);
 
-  // ─── Dynamic scale (matches Framer: s = min(vw*0.9/W, vh/H, 1.3)) ────────────
-  // Applied to .phone only; phone-wrap handles x-translation separately.
-  function applyScale(): number {
+  type Mode = 'landscape' | 'portrait';
+  interface Offset { x: number; y: number; }
+
+  // ─── Mode detection ─────────────────────────────────────────────────────────
+  function getMode(): Mode {
+    return window.innerWidth / window.innerHeight < 0.85 ? 'portrait' : 'landscape';
+  }
+
+  // ─── Dynamic scale + portrait class toggle ──────────────────────────────────
+  function applyScale(): { s: number; mode: Mode } {
     const phone = document.getElementById('phone') as HTMLElement | null;
-    if (!phone) return 1;
-    const s = Math.min(
-      window.innerWidth  * 0.9 / 1000,
-      window.innerHeight / 684,
-      1.3
-    );
+    if (!phone) return { s: 1, mode: getMode() };
+    const mode = getMode();
+    phone.classList.toggle('phone--portrait', mode === 'portrait');
+    const s = mode === 'portrait'
+      ? Math.min(window.innerWidth * 0.94 / 380, window.innerHeight * 0.9 / 740, 1.3)
+      : Math.min(window.innerWidth * 0.9 / 1000, window.innerHeight / 684, 1.3);
     phone.style.transform       = `scale(${s})`;
     phone.style.transformOrigin = 'center center';
-    return s;
+    return { s, mode };
   }
 
   // ─── Closed-phone centering offset ──────────────────────────────────────────
-  // When closed, left leaf folds to device x:500–1000; center=750; device center=500.
-  // Delta = G.W/4 = 250 (matches Framer's `(-k * Gd.W / 4)` translate on R.dev).
-  // getBoundingClientRect().width already reflects the CSS scale(s), so:
-  //   closedX = -250 * s (in screen CSS pixels, applied to phone-wrap via GSAP)
-  function closedX(phone: HTMLElement): number {
-    return -(250 * (phone.getBoundingClientRect().width / 1000));
+  // Landscape: shift left so visible right half is centered (delta = W/4 = 250).
+  // Portrait:  shift up so visible top half is centered (delta = H/4 = 185).
+  function getClosedOffset(s: number, mode: Mode): Offset {
+    if (mode === 'portrait') return { x: 0, y: -(185 * s) };
+    return { x: -(250 * s), y: 0 };
   }
 
   // ─── Scroll animation ───────────────────────────────────────────────────────
-  function initScroll(offset: number) {
-    const driver     = document.getElementById('driver')!;
-    const stage      = document.getElementById('stage')!;
-    const wrap       = document.getElementById('phoneWrap')!;
-    const right      = document.getElementById('phoneRight')!;
-    const left       = document.getElementById('phoneLeft')!;
-    const content    = document.getElementById('phoneContent')!;
-    const viewport   = document.getElementById('phoneViewport')!;
-    const coverCall  = document.getElementById('phoneCoverCall')!;
-    const shadeR     = document.getElementById('phoneShadeR')!;
-    const shadeL     = document.getElementById('phoneShadeL')!;
-    const slabR      = document.getElementById('phoneSlabR')!;
-    const glassR     = document.getElementById('phoneGlassR')!;
+  function initScroll(offset: Offset, mode: Mode) {
+    const driver    = document.getElementById('driver')!;
+    const stage     = document.getElementById('stage')!;
+    const wrap      = document.getElementById('phoneWrap')!;
+    const right     = document.getElementById('phoneRight')!;
+    const left      = document.getElementById('phoneLeft')!;
+    const content   = document.getElementById('phoneContent')!;
+    const viewport  = document.getElementById('phoneViewport')!;
+    const coverCall = document.getElementById('phoneCoverCall')!;
+    const shadeR    = document.getElementById('phoneShadeR')!;
+    const shadeL    = document.getElementById('phoneShadeL')!;
+    const slabR     = document.getElementById('phoneSlabR')!;
+    const glassR    = document.getElementById('phoneGlassR')!;
 
     if (!driver || !stage || !wrap || !right || !left || !content || !coverCall) return;
 
     const screenH = viewport ? viewport.clientHeight : 660;
-
-    gsap.set(wrap, { x: offset });
+    gsap.set(wrap, { x: offset.x, y: offset.y });
 
     const innerPx  = Math.max(0, content.scrollHeight - screenH);
-    const U1       = 0.7;   // unfold phase
+    const U1       = 0.7;
     const U_scroll = innerPx > 0 ? innerPx / window.innerHeight : 0;
-    const U_hold   = U1 * 2; // hold open — double the unfold time
-    const U2       = 0.6;   // refold phase
-    const U3       = 0.3;   // hold at end
+    const U_hold   = U1 * 2;
+    const U2       = 0.6;
+    const U3       = 0.3;
     const totalPx  = Math.round((U1 + U_scroll + U_hold + U2 + U3) * window.innerHeight);
 
     driver.style.height = `calc(100vh + ${totalPx}px)`;
+
+    // Snap-to radius values vary by orientation
+    const isP = mode === 'portrait';
+    const snapOpen = isP
+      ? { slab: '0px 0px 42px 42px', glass: '0px 0px 38px 38px', screen: '0px 0px 32px 32px', shade: '0px 0px 42px 42px' }
+      : { slab: '0px 46px 46px 0px', glass: '0px 42px 42px 0px', screen: '0px 34px 34px 0px', shade: '0px 46px 46px 0px' };
+    const snapClosed = isP
+      ? { slab: '42px 42px 42px 42px', glass: '38px 38px 38px 38px', screen: '32px 32px 32px 32px', shade: '42px 42px 42px 42px' }
+      : { slab: '46px 46px 46px 46px', glass: '42px 42px 42px 42px', screen: '34px 34px 34px 34px', shade: '46px 46px 46px 46px' };
 
     const tl = gsap.timeline({
       scrollTrigger: {
@@ -411,41 +565,45 @@ import CallScreen from './CallScreen.astro';
       },
     });
 
-    // Phase 1 — unfold: center the device (x→0), rotate leaf open, fade in right screen
-    tl.to(wrap,  { x: 0,       ease: 'power2.inOut', duration: U1 }, 0);
-    tl.to(left,  { rotateY: 0, ease: 'power2.inOut', duration: U1 }, 0);
-    tl.to(right, { opacity: 1, ease: 'none',          duration: 0.05 }, 0);
-    // Shades peak at 85° (0.47 of unfold), then clear
+    // Phase 1 — unfold: center the device, rotate leaf open, fade in right screen
+    tl.to(wrap,  { x: 0, y: 0, ease: 'power2.inOut', duration: U1 }, 0);
+    tl.to(left,  isP
+      ? { rotateX: 0,   ease: 'power2.inOut', duration: U1 }
+      : { rotateY: 0,   ease: 'power2.inOut', duration: U1 }, 0);
+    tl.to(right, { opacity: 1, ease: 'none', duration: 0.05 }, 0);
+    // Shades peak at 90° midpoint, then clear
     tl.to(shadeR, { opacity: 0.45, ease: 'power2.in',  duration: U1 * 0.5 }, 0);
     tl.to(shadeR, { opacity: 0,    ease: 'power2.out', duration: U1 * 0.5 }, U1 * 0.5);
     tl.to(shadeL, { opacity: 0.45, ease: 'power2.in',  duration: U1 * 0.5 }, 0);
     tl.to(shadeL, { opacity: 0,    ease: 'power2.out', duration: U1 * 0.5 }, U1 * 0.5);
-    // At 85° of unfold: snap right-half hinge corners to flat
-    tl.set(slabR,    { borderRadius: '0px 46px 46px 0px' }, U1 * 0.5);
-    tl.set(glassR,   { borderRadius: '0px 42px 42px 0px' }, U1 * 0.5);
-    tl.set(viewport, { borderRadius: '0px 34px 34px 0px' }, U1 * 0.5);
-    tl.set(shadeR,   { borderRadius: '0px 46px 46px 0px' }, U1 * 0.5);
+    // Snap hinge corners flat at 90° — CSS transition animates the change
+    tl.set(slabR,    { borderRadius: snapOpen.slab   }, U1 * 0.5);
+    tl.set(glassR,   { borderRadius: snapOpen.glass  }, U1 * 0.5);
+    tl.set(viewport, { borderRadius: snapOpen.screen }, U1 * 0.5);
+    tl.set(shadeR,   { borderRadius: snapOpen.shade  }, U1 * 0.5);
 
     // Phase 2 — scroll content inside device
     if (innerPx > 0) {
       tl.to(content, { y: -innerPx, ease: 'none', duration: U_scroll }, U1);
     }
 
-    // Phase 3 — refold: fade right screen, rotate leaf closed, re-center, reveal call
+    // Phase 3 — refold: rotate leaf closed, re-center, reveal call screen
     const closeAt = U1 + U_scroll + U_hold;
-    tl.to(left,  { rotateY: 180, ease: 'power2.inOut', duration: U2       }, closeAt);
-    tl.to(wrap,  { x: offset,   ease: 'power2.inOut', duration: U2       }, closeAt);
-    // Shades peak at 85° of refold (0.47)
+    tl.to(left, isP
+      ? { rotateX: -180, ease: 'power2.inOut', duration: U2 }
+      : { rotateY: 180,  ease: 'power2.inOut', duration: U2 }, closeAt);
+    tl.to(wrap, { x: offset.x, y: offset.y, ease: 'power2.inOut', duration: U2 }, closeAt);
+    // Shades peak at 90° of refold
     tl.to(shadeR, { opacity: 0.45, ease: 'power2.in',  duration: U2 * 0.5 }, closeAt);
     tl.to(shadeR, { opacity: 0,    ease: 'power2.out', duration: U2 * 0.5 }, closeAt + U2 * 0.5);
     tl.to(shadeL, { opacity: 0.45, ease: 'power2.in',  duration: U2 * 0.5 }, closeAt);
     tl.to(shadeL, { opacity: 0,    ease: 'power2.out', duration: U2 * 0.5 }, closeAt + U2 * 0.5);
-    // At 85° of refold: snap right-half corners back to all-rounded
-    tl.set(slabR,    { borderRadius: '46px 46px 46px 46px' }, closeAt + U2 * 0.5);
-    tl.set(glassR,   { borderRadius: '42px 42px 42px 42px' }, closeAt + U2 * 0.5);
-    tl.set(viewport, { borderRadius: '34px 34px 34px 34px' }, closeAt + U2 * 0.5);
-    tl.set(shadeR,   { borderRadius: '46px 46px 46px 46px' }, closeAt + U2 * 0.5);
-    // Black screen snaps on instantly when refold begins — no fade
+    // Snap hinge corners back to all-rounded at 90° refold
+    tl.set(slabR,    { borderRadius: snapClosed.slab   }, closeAt + U2 * 0.5);
+    tl.set(glassR,   { borderRadius: snapClosed.glass  }, closeAt + U2 * 0.5);
+    tl.set(viewport, { borderRadius: snapClosed.screen }, closeAt + U2 * 0.5);
+    tl.set(shadeR,   { borderRadius: snapClosed.shade  }, closeAt + U2 * 0.5);
+    // Black call screen snaps on instantly when refold begins
     tl.set(coverCall, { opacity: 1, pointerEvents: 'auto' }, closeAt);
 
     // Phase 4 — hold at call screen
@@ -454,20 +612,20 @@ import CallScreen from './CallScreen.astro';
     ScrollTrigger.refresh();
   }
 
-  // ─── Intro animation — phone rises in only ──────────────────────────────────
-  function playIntro(_offset: number): Promise<void> {
+  // ─── Intro animation — phone rises in ───────────────────────────────────────
+  function playIntro(offset: Offset): Promise<void> {
     return new Promise((resolve) => {
       const phoneWrap = document.getElementById('phoneWrap') as HTMLElement;
       if (!phoneWrap) { resolve(); return; }
 
       const vh = window.innerHeight;
-      gsap.set(phoneWrap, { y: vh * 0.4, rotation: -4, scale: 0.88, opacity: 0 });
+      gsap.set(phoneWrap, { y: offset.y + vh * 0.4, rotation: -4, scale: 0.88, opacity: 0 });
 
       let introTl: gsap.core.Timeline | null = null;
 
       const finish = () => {
         if (introTl) { introTl.kill(); introTl = null; }
-        gsap.set(phoneWrap, { y: 0, rotation: 0, scale: 1, opacity: 1 });
+        gsap.set(phoneWrap, { y: offset.y, rotation: 0, scale: 1, opacity: 1 });
         window.removeEventListener('scroll', onScroll);
         document.removeEventListener('visibilitychange', finish);
         resolve();
@@ -478,7 +636,7 @@ import CallScreen from './CallScreen.astro';
       document.addEventListener('visibilitychange', finish);
 
       introTl = gsap.timeline({ onComplete: finish });
-      introTl.to(phoneWrap, { y: 0, rotation: 0, scale: 1, opacity: 1, duration: 0.9, ease: 'power4.out' });
+      introTl.to(phoneWrap, { y: offset.y, rotation: 0, scale: 1, opacity: 1, duration: 0.9, ease: 'power4.out' });
 
       window.setTimeout(finish, 1200);
     });
@@ -489,14 +647,14 @@ import CallScreen from './CallScreen.astro';
     const phone = document.getElementById('phone') as HTMLElement | null;
     if (!phone) return;
 
-    applyScale();
+    const { s, mode } = applyScale();
+    const offset = getClosedOffset(s, mode);
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const offset  = closedX(phone);
 
     if (reduced) {
       gsap.set('#phoneWrap', { x: 0, y: 0, rotation: 0, scale: 1, opacity: 1 });
-      initScroll(offset);
+      initScroll(offset, mode);
       return;
     }
 
@@ -511,18 +669,19 @@ import CallScreen from './CallScreen.astro';
       document.visibilityState === 'visible' &&
       window.scrollY < 40;
 
-    initScroll(offset);
+    initScroll(offset, mode);
 
     if (canPlay) {
       await playIntro(offset);
       const phone2 = document.getElementById('phone') as HTMLElement | null;
       if (phone2) {
-        const freshOffset = closedX(phone2);
-        gsap.set('#phoneWrap', { x: freshOffset });
+        const { s: freshS, mode: freshMode } = applyScale();
+        const freshOffset = getClosedOffset(freshS, freshMode);
+        gsap.set('#phoneWrap', { x: freshOffset.x, y: freshOffset.y });
         ScrollTrigger.refresh();
       }
     } else {
-      gsap.set('#phoneWrap', { y: 0, rotation: 0, scale: 1 });
+      gsap.set('#phoneWrap', { y: offset.y, rotation: 0, scale: 1 });
       gsap.to('#phoneWrap',  { opacity: 1, duration: 0.45, ease: 'power2.out', delay: 0.05 });
     }
   }
@@ -540,35 +699,38 @@ import CallScreen from './CallScreen.astro';
   window.addEventListener('resize', () => {
     clearTimeout(_rt);
     _rt = setTimeout(() => {
-      applyScale();
       ScrollTrigger.getAll().forEach(st => st.kill());
-      const wrap       = document.getElementById('phoneWrap');
-      const right      = document.getElementById('phoneRight');
-      const left       = document.getElementById('phoneLeft');
-      const content    = document.getElementById('phoneContent');
-      const coverCall  = document.getElementById('phoneCoverCall');
-      const driver     = document.getElementById('driver');
-      const phone      = document.getElementById('phone') as HTMLElement | null;
-      if (!phone) return;
-      const off = closedX(phone);
-      const shadeR2    = document.getElementById('phoneShadeR');
-      const shadeL2    = document.getElementById('phoneShadeL');
-      const slabR2     = document.getElementById('phoneSlabR');
-      const glassR2    = document.getElementById('phoneGlassR');
-      const viewport2  = document.getElementById('phoneViewport');
-      if (wrap)      gsap.set(wrap,      { x: off, y: 0, rotation: 0, scale: 1, opacity: 1 });
+      const { s, mode } = applyScale();
+      const off = getClosedOffset(s, mode);
+      const isP = mode === 'portrait';
+
+      const wrap      = document.getElementById('phoneWrap');
+      const right     = document.getElementById('phoneRight');
+      const left      = document.getElementById('phoneLeft');
+      const content   = document.getElementById('phoneContent');
+      const coverCall = document.getElementById('phoneCoverCall');
+      const driver    = document.getElementById('driver');
+      const shadeR    = document.getElementById('phoneShadeR');
+      const shadeL    = document.getElementById('phoneShadeL');
+      const slabR     = document.getElementById('phoneSlabR');
+      const glassR    = document.getElementById('phoneGlassR');
+      const viewport  = document.getElementById('phoneViewport');
+
+      if (wrap)      gsap.set(wrap,      { x: off.x, y: off.y, rotation: 0, scale: 1, opacity: 1 });
       if (right)     gsap.set(right,     { opacity: 0 });
-      if (left)      gsap.set(left,      { rotateY: 180 });
+      if (left)      isP
+        ? gsap.set(left, { rotateY: 0, rotateX: -180 })
+        : gsap.set(left, { rotateX: 0, rotateY:  180 });
       if (content)   gsap.set(content,   { y: 0 });
       if (coverCall) gsap.set(coverCall, { opacity: 0, pointerEvents: 'none' });
-      if (shadeR2)   gsap.set(shadeR2,   { opacity: 0 });
-      if (shadeL2)   gsap.set(shadeL2,   { opacity: 0 });
-      if (slabR2)    gsap.set(slabR2,    { borderRadius: '46px 46px 46px 46px' });
-      if (glassR2)   gsap.set(glassR2,   { borderRadius: '42px 42px 42px 42px' });
-      if (viewport2) gsap.set(viewport2, { borderRadius: '34px 34px 34px 34px' }); /* initScroll resets to all-rounded */
-      if (shadeR2)   gsap.set(shadeR2,   { borderRadius: '46px 46px 46px 46px' });
+      if (shadeR)    gsap.set(shadeR,    { opacity: 0 });
+      if (shadeL)    gsap.set(shadeL,    { opacity: 0 });
+      if (slabR)     gsap.set(slabR,     { borderRadius: isP ? '42px 42px 42px 42px' : '46px 46px 46px 46px' });
+      if (glassR)    gsap.set(glassR,    { borderRadius: isP ? '38px 38px 38px 38px' : '42px 42px 42px 42px' });
+      if (viewport)  gsap.set(viewport,  { borderRadius: isP ? '32px 32px 32px 32px' : '34px 34px 34px 34px' });
+      if (shadeR)    gsap.set(shadeR,    { borderRadius: isP ? '42px 42px 42px 42px' : '46px 46px 46px 46px' });
       if (driver)    driver.style.height = '';
-      initScroll(off);
+      initScroll(off, mode);
     }, 300);
   });
 </script>
