@@ -4,7 +4,7 @@ import type { ModelName, RoomSource, ScreenName } from '../assets';
 /**
  * A box-and-cylinder stand-in for the real room, built in code.
  *
- * It returns the same RoomSource shape the GLB loader will return (step 3), so
+ * It returns the same RoomSource shape as `createLoadedRoom()` (LoadedRoom.ts), so
  * swapping in real models is a data change. Dimensions follow analysis
  * section 3.1: footprint about 9.4 x 9.4, about 5.7 tall, floor at y = 0.32,
  * walls on the -x and -z sides. All layout numbers below are original
@@ -231,6 +231,6 @@ export function createPlaceholderRoom(): RoomSource {
       remote,
     },
     screens,
-    baked: false,
+    textures: {},
   };
 }

@@ -4,9 +4,10 @@ import { MODEL_NAMES, SCREEN_NAMES, type ModelName, type RoomSource, type Screen
 /**
  * Puts a RoomSource into the scene (analysis section 4.6).
  *
- * Without bakes, every model gets the clay material and the two fallback
- * lights are added. The baked-material path arrives with the loader in step 3;
- * the animated objects, screens and interactions hang off this class later.
+ * A model with a baked texture gets an unlit material showing that texture.
+ * A model without one gets the clay material, and the two fallback lights are
+ * added as soon as one model needs them (lights do not affect the baked ones).
+ * The animated objects, screens and interactions hang off this class later.
  */
 export default class World {
   models: Record<ModelName, THREE.Group>;
@@ -22,19 +23,16 @@ export default class World {
     this.screens = source.screens;
     this.root.name = 'world';
 
-    if (!source.baked) {
-      this.clay = new THREE.MeshStandardMaterial({ color: '#e8e5e0', roughness: 0.85 });
-
-      const sun = new THREE.DirectionalLight('#ffffff', 2.2);
-      sun.position.set(6, 8, 6);
-      this.root.add(sun, new THREE.AmbientLight('#ffffff', 0.9));
-    }
-
     for (const name of MODEL_NAMES) {
       const group = source.models[name];
+      const texture = source.textures[name];
+      const material = texture
+        ? new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide })
+        : this.getClay();
+
       group.traverse((child) => {
         if (!(child instanceof THREE.Mesh)) return;
-        if (this.clay) child.material = this.clay;
+        child.material = material;
         child.castShadow = false;
         child.receiveShadow = false;
       });
@@ -44,6 +42,18 @@ export default class World {
     for (const name of SCREEN_NAMES) this.root.add(source.screens[name]);
 
     scene.add(this.root);
+  }
+
+  /** Creates the clay material and the fallback lights the first time a model needs them. */
+  private getClay(): THREE.MeshStandardMaterial {
+    if (!this.clay) {
+      this.clay = new THREE.MeshStandardMaterial({ color: '#e8e5e0', roughness: 0.85 });
+
+      const sun = new THREE.DirectionalLight('#ffffff', 2.2);
+      sun.position.set(6, 8, 6);
+      this.root.add(sun, new THREE.AmbientLight('#ffffff', 0.9));
+    }
+    return this.clay;
   }
 
   update(): void {
@@ -59,6 +69,9 @@ export default class World {
       const material = child.material as THREE.Material | THREE.Material[];
       for (const m of Array.isArray(material) ? material : [material]) materials.add(m);
     });
-    for (const material of materials) material.dispose();
+    for (const material of materials) {
+      (material as THREE.MeshBasicMaterial).map?.dispose();
+      material.dispose();
+    }
   }
 }
