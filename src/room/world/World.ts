@@ -10,6 +10,7 @@ import {
 import type Time from '../utils/Time';
 import ChairTop from './ChairTop';
 import CoffeeSteam from './CoffeeSteam';
+import Door from './Door';
 import Roomba from './Roomba';
 import Screens, { type ScreensOptions } from './Screens';
 
@@ -20,8 +21,8 @@ import Screens, { type ScreensOptions } from './Screens';
  * A model without one gets the clay material, and the two fallback lights are
  * added as soon as one model needs them (lights do not affect the baked ones).
  * The animated objects (section 5) are created here and ticked from `update()`;
- * `liveScreens` draws the screen contents (section 6); interactions hang off
- * this class later.
+ * `liveScreens` draws the screen contents (section 6). Pointer interactions
+ * are in `Interactions.ts`, created by Experience once the world exists.
  */
 export default class World {
   models: Record<ModelName, THREE.Group>;
@@ -31,6 +32,7 @@ export default class World {
   coffeeSteam: CoffeeSteam | null = null;
   /** Contents of the screens; `screens` above holds the meshes. */
   liveScreens: Screens;
+  door: Door;
 
   private scene: THREE.Scene;
   private time: Time;
@@ -70,6 +72,8 @@ export default class World {
       this.root.add(source.steam);
     }
     this.liveScreens = new Screens(this.screens, options);
+    // After the screens are in `root`: the door takes the whiteboard over.
+    this.door = new Door(this.models.door, this.screens.screenWhiteboard, source.doorOpenAngle);
 
     scene.add(this.root);
   }
@@ -91,11 +95,13 @@ export default class World {
     this.roomba.update(this.time.delta);
     this.coffeeSteam?.update(this.time.elapsed);
     this.liveScreens.update(this.time.delta);
+    this.door.update(this.time.delta);
   }
 
   destroy(): void {
     this.roomba.destroy();
     this.liveScreens.destroy();
+    this.door.destroy();
     this.scene.remove(this.root);
     const materials = new Set<THREE.Material>();
     this.root.traverse((child) => {

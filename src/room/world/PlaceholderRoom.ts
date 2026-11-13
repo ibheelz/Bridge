@@ -228,6 +228,8 @@ export function createPlaceholderRoom(): RoomSource {
 
   return {
     steam,
+    // The leaf runs from the hinge toward +x, so a negative turn swings it into the room (+z).
+    doorOpenAngle: THREE.MathUtils.degToRad(-25),
     models: {
       roomModel,
       workStation,

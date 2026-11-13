@@ -44,6 +44,12 @@ export interface RoomSource {
    * 0-1 UVs, v = 0 at the mug. World gives it the steam shader.
    */
   steam?: THREE.Mesh;
+  /**
+   * How far the door's pivot turns about y when it opens, in radians, sign
+   * included. Defaults to +25 degrees (Door.ts). Set it when that would swing
+   * the door through the wall.
+   */
+  doorOpenAngle?: number;
 }
 
 /** One file for the loader. `name` is the key it ends up under in `resources.items`. */

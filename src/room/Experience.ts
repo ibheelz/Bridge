@@ -7,6 +7,7 @@ import Navigation from './Navigation';
 import Resources from './utils/Resources';
 import type { ResourceGroup } from './utils/Resources';
 import World from './world/World';
+import Interactions from './world/Interactions';
 import { createBaseGroup } from './assets';
 import { createLoadedRoom } from './world/LoadedRoom';
 import { createPlaceholderRoom } from './world/PlaceholderRoom';
@@ -45,6 +46,8 @@ export default class Experience {
   /** Built when the `base` resource group ends, so it is missing for the first frames. */
   world: World | null = null;
   navigation!: Navigation;
+  /** Hover and click on the room's objects; exists once `world` does. */
+  interactions: Interactions | null = null;
 
   private tvVideo?: string;
 
@@ -83,6 +86,7 @@ export default class Experience {
     this.world = new World(this.scene, this.time, loaded ?? createPlaceholderRoom(), {
       tvVideo: this.tvVideo,
     });
+    this.interactions = new Interactions(this.camera, this.navigation, this.targetElement, this.world);
   }
 
   private resize(): void {
@@ -103,6 +107,8 @@ export default class Experience {
     this.sizes.destroy();
     this.resources.destroy();
     this.navigation.destroy();
+    this.interactions?.destroy();
+    this.interactions = null;
     this.world?.destroy();
     this.world = null;
     this.renderer.destroy();

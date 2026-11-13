@@ -4,6 +4,7 @@ import type Camera from './Camera';
 import { HOME_VIEW } from './Camera';
 import type Sizes from './utils/Sizes';
 import type Time from './utils/Time';
+import { EVENTS } from './events';
 
 /** Analysis section 4.4. */
 const SMOOTHING = 0.005; // per millisecond
@@ -27,7 +28,7 @@ const DOUBLE_TAP_GAP_MS = 350;
 const ZOOMED_IN_BELOW = HOME_VIEW.radius - 3;
 const ZOOMED_OUT_FROM = HOME_VIEW.radius - 0.4;
 
-export const ZOOM_EVENT = 'kai:zoom';
+export const ZOOM_EVENT = EVENTS.zoom;
 
 export interface NavigationState {
   spherical: THREE.Spherical;
