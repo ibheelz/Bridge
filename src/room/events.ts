@@ -18,7 +18,6 @@ export const EVENTS = {
   suite: 'kai:suite',
   suiteClose: 'kai:suite-close',
   mute: 'kai:mute',
-  introOpen: 'kai:intro-open',
   sky: 'kai:sky',
 } as const;
 

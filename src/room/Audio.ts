@@ -4,7 +4,6 @@ import type Navigation from './Navigation';
 import type World from './world/World';
 import VideoScreen from './world/screens/VideoScreen';
 import { EVENTS, type CrtModeDetail, type MuteDetail } from './events';
-import { readMuted } from './utils/mutePref';
 
 // Analysis section 9. Everything is synthesized; there are no sample files.
 const MASTER_LEVEL = 0.9;
@@ -116,7 +115,8 @@ export default class RoomAudio {
   private tvVideo: HTMLVideoElement | null = null;
   private sources: AudioScheduledSourceNode[] = [];
 
-  private muted = readMuted();
+  /** Set by `kai:mute`; nothing on the page sends it now that the sound button is gone. */
+  private muted = false;
   private ducked = false;
   private fadeEnds = 0;
   private hidden = document.hidden;
