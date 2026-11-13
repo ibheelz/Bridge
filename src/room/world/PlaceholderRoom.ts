@@ -84,7 +84,6 @@ const COLORS = {
   driveBay: '#43474e',
   cableBlue: '#3d7bd9',
   cableYellow: '#e0b43a',
-  channel: '#e9eaec',
   rug: '#9fb0c8',
   console: '#6a4a33',
   tv: '#1c1e22',
@@ -313,9 +312,11 @@ function sideX(side: Side, x: number): number {
 function desk(side: Side, F: number) {
   const W = -HALF_X; // the side wall, in left coordinates
   const chairX = sideX(side, W + CHAIR_IN);
+  // The right (IT) desk runs all the way to the back wall, to carry the rack.
+  const far = side === 'right' ? -HALF_Z : -2.0;
   const workStation = [
-    sideBox(side, [W, DESK_TOP - 0.15, -2.0], [W + 2.3, DESK_TOP, 4.3], COLORS.deskTop), // top
-    sideBox(side, [W, F, -2.0], [W + 2.2, DESK_TOP - 0.15, -1.0], COLORS.drawers), // drawers, far end
+    sideBox(side, [W, DESK_TOP - 0.15, far], [W + 2.3, DESK_TOP, 4.3], COLORS.deskTop), // top
+    sideBox(side, [W, F, far], [W + 2.2, DESK_TOP - 0.15, far + 1.0], COLORS.drawers), // drawers, far end
     sideBox(side, [W, F, 3.3], [W + 2.2, DESK_TOP - 0.15, 4.3], COLORS.drawers), // drawers, near end
     sideBox(side, [W + 1.75, DESK_TOP, -0.55], [W + 2.15, DESK_TOP + 0.05, 0.6], COLORS.keyboard), // keyboard
     // Chair base: the part that does not swivel.
@@ -466,12 +467,12 @@ function designSetup(): { workStation: THREE.Mesh[]; monitor: THREE.Mesh[]; scre
 
 /**
  * The right desk: the IT side. A standard 16:9 monitor, a plain office tower
- * with its status lights, and under the window a server rack: patch panel,
- * neatly dressed patch cables, a switch with blinking port lights, four
- * servers, and a cable channel running along the wall to the desk.
+ * with its status lights, and on the desk's far end (the desk runs to the
+ * back wall on this side) a compact rack: patch panel, neatly dressed patch
+ * cables, a switch with blinking port lights and two servers.
  * Coordinates are written for the left wall and mirrored with `sideBox`.
  */
-function itSetup(F: number): { workStation: THREE.Mesh[]; monitor: THREE.Mesh[]; screen: THREE.Mesh } {
+function itSetup(): { workStation: THREE.Mesh[]; monitor: THREE.Mesh[]; screen: THREE.Mesh } {
   const W = -HALF_X;
   const D = DESK_TOP;
   const r = (min: V3, max: V3, color?: string): THREE.Mesh => sideBox('right', min, max, color);
@@ -493,11 +494,13 @@ function itSetup(F: number): { workStation: THREE.Mesh[]; monitor: THREE.Mesh[];
   ];
 
   // Server rack on the floor under the window, its front facing the room (+z).
-  const rack = { x0: W + 0.2, x1: W + 2.0, y0: F, y1: F + 1.85, z0: -4.55, z1: -3.3 };
+  // Compact half-width rack on the desk's back end, against the side wall,
+  // so it covers only a little of the window's lower corner.
+  const rack = { x0: W + 0.1, x1: W + 1.1, y0: D, y1: D + 1.0, z0: -4.6, z1: -3.45 };
   const front = rack.z1;
   const U = 0.12; // one rack unit
-  const ix0 = rack.x0 + 0.12; // inside the rails
-  const ix1 = rack.x1 - 0.22; // leaves room for the cable manager on the right
+  const ix0 = rack.x0 + 0.08; // inside the rails
+  const ix1 = rack.x1 - 0.2; // leaves room for the cable manager on the right
   const rackParts: THREE.Mesh[] = [
     r([rack.x0, rack.y0, rack.z0], [rack.x1, rack.y1, rack.z1], COLORS.rack),
     r([rack.x1 - 0.18, rack.y0 + 0.08, front], [rack.x1 - 0.06, rack.y1 - 0.08, front + 0.06], COLORS.cableManager),
@@ -508,14 +511,14 @@ function itSetup(F: number): { workStation: THREE.Mesh[]; monitor: THREE.Mesh[];
     top -= units * U;
     return [top + 0.01, y1 - 0.01];
   };
-  // Patch panel, then the switch below it; twelve short cables run straight down between them.
+  // Patch panel, then the switch below it; eight short cables run straight down between them.
   const [pp0, pp1] = slot(1);
   const [sw0, sw1] = slot(1);
   rackParts.push(r([ix0, pp0, front], [ix1, pp1, front + 0.03], COLORS.patchPanel));
   rackParts.push(r([ix0, sw0, front], [ix1, sw1, front + 0.03], COLORS.switch));
-  const PORTS = 12;
+  const PORTS = 8;
   for (let p = 0; p < PORTS; p++) {
-    const x = ix0 + 0.1 + (p * (ix1 - ix0 - 0.2)) / (PORTS - 1);
+    const x = ix0 + 0.07 + (p * (ix1 - ix0 - 0.14)) / (PORTS - 1);
     rackParts.push(
       r([x - 0.012, (sw0 + sw1) / 2, front + 0.03], [x + 0.012, (pp0 + pp1) / 2, front + 0.05], p % 2 ? COLORS.cableYellow : COLORS.cableBlue),
       light(r([x - 0.015, sw0 + 0.012, front + 0.03], [x + 0.015, sw0 + 0.032, front + 0.04]), {
@@ -526,13 +529,13 @@ function itSetup(F: number): { workStation: THREE.Mesh[]; monitor: THREE.Mesh[];
     );
   }
   slot(0.5); // a little space
-  // Four 2U servers, each with drive bays, a steady power light and a flickering activity light.
-  for (let s = 0; s < 4; s++) {
+  // Two 2U servers, each with drive bays, a steady power light and a flickering activity light.
+  for (let s = 0; s < 2; s++) {
     const [s0, s1] = slot(2);
     rackParts.push(r([ix0, s0, front], [ix1, s1, front + 0.03], COLORS.server));
-    for (let b = 0; b < 4; b++) {
-      const bx = ix0 + 0.08 + b * 0.22;
-      rackParts.push(r([bx, s0 + 0.04, front + 0.03], [bx + 0.18, s1 - 0.04, front + 0.04], COLORS.driveBay));
+    for (let b = 0; b < 3; b++) {
+      const bx = ix0 + 0.05 + b * 0.17;
+      rackParts.push(r([bx, s0 + 0.04, front + 0.03], [bx + 0.14, s1 - 0.04, front + 0.04], COLORS.driveBay));
     }
     rackParts.push(
       light(r([ix1 - 0.12, s1 - 0.06, front + 0.03], [ix1 - 0.09, s1 - 0.03, front + 0.04]), { kind: 'steady', on: '#3ddc84' }),
@@ -544,17 +547,10 @@ function itSetup(F: number): { workStation: THREE.Mesh[]; monitor: THREE.Mesh[];
     );
   }
 
-  // White cable channel: along the wall at floor level from the rack, then up the back of the desk drawers.
-  const channel = [
-    r([W + 0.02, F, rack.z1], [W + 0.14, F + 0.1, -2.12], COLORS.channel),
-    r([W + 0.02, F, -2.12], [W + 0.14, D - 0.15, -2.0], COLORS.channel),
-  ];
-
   const workStation = [
     r([pc.x0, D, pc.z0], [pc.x1, pc.y1, pc.z1], COLORS.officePc),
     ...pcFront,
     ...rackParts,
-    ...channel,
   ];
   return { workStation, monitor, screen };
 }
@@ -564,7 +560,7 @@ export function createPlaceholderRoom(): RoomSource {
   const left = desk('left', F);
   const right = desk('right', F);
   const design = designSetup();
-  const it = itSetup(F);
+  const it = itSetup();
 
   // --- Shell: floor slab and the three walls -------------------------------
   const roomModel = model('roomModel', [0, F, 0], [
