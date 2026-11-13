@@ -17,6 +17,13 @@ const assets = fs.existsSync(assetsDir)
         return `${base}assets/${encodeURIComponent(file)}?v=${version}`;
       })
   : [];
+
+// The TV plays the first video in public/assets/screens/, if there is one.
+const screensDir = path.join(assetsDir, 'screens');
+const tvFile = fs.existsSync(screensDir)
+  ? fs.readdirSync(screensDir).filter((file) => /\.(mp4|webm)$/i.test(file)).sort()[0]
+  : undefined;
+const tvVideo = tvFile ? `${base}assets/screens/${encodeURIComponent(tvFile)}` : undefined;
 const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
 ---
 <html lang="en">
@@ -106,6 +113,7 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
             class="room-experience__target"
             data-assets={JSON.stringify(assets)}
             data-draco={`${base}draco/`}
+            data-tv-video={tvVideo}
           >
           </div>
           {
@@ -129,6 +137,7 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
           targetElement: target,
           assets: JSON.parse(target.dataset.assets ?? '[]') as string[],
           dracoPath: target.dataset.draco,
+          tvVideo: target.dataset.tvVideo || undefined,
         });
         initLoading(document.querySelector<HTMLElement>('.loading'), experience.resources);
       }

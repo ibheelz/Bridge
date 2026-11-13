@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { MODEL_NAMES, SCREEN_NAMES, type ModelName, type RoomSource, type ScreenName } from '../assets';
 import type { LoadedFile } from '../utils/Loader';
 
-/** Screens stay dark until step 5 gives them canvas textures. */
+/** Screens are dark until `Screens` gives them content (the CRT stays dark until it boots). */
 const SCREEN_OFF = '#15161a';
 
 /**

@@ -17,6 +17,8 @@ export interface ExperienceOptions {
   assets?: readonly string[];
   /** Folder holding the Draco decoder, with a trailing slash. */
   dracoPath?: string;
+  /** URL of the video for the TV screen, when `public/assets/screens/` holds one. */
+  tvVideo?: string;
 }
 
 declare global {
@@ -44,6 +46,8 @@ export default class Experience {
   world: World | null = null;
   navigation!: Navigation;
 
+  private tvVideo?: string;
+
   constructor(options?: ExperienceOptions) {
     if (Experience.instance) return Experience.instance;
     if (!options?.targetElement) throw new Error('Experience needs a targetElement');
@@ -51,6 +55,7 @@ export default class Experience {
     window.experience = this;
 
     this.targetElement = options.targetElement;
+    this.tvVideo = options.tvVideo;
     this.config = { debug: window.location.hash === '#debug' };
 
     this.time = new Time();
@@ -75,7 +80,9 @@ export default class Experience {
   /** Real models when they all loaded, the placeholder room otherwise. */
   private buildWorld(group: ResourceGroup): void {
     const loaded = group.toLoad > 0 ? createLoadedRoom(this.resources.items) : null;
-    this.world = new World(this.scene, this.time, loaded ?? createPlaceholderRoom());
+    this.world = new World(this.scene, this.time, loaded ?? createPlaceholderRoom(), {
+      tvVideo: this.tvVideo,
+    });
   }
 
   private resize(): void {

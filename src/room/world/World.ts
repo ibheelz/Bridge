@@ -11,6 +11,7 @@ import type Time from '../utils/Time';
 import ChairTop from './ChairTop';
 import CoffeeSteam from './CoffeeSteam';
 import Roomba from './Roomba';
+import Screens, { type ScreensOptions } from './Screens';
 
 /**
  * Puts a RoomSource into the scene (analysis section 4.6).
@@ -19,7 +20,8 @@ import Roomba from './Roomba';
  * A model without one gets the clay material, and the two fallback lights are
  * added as soon as one model needs them (lights do not affect the baked ones).
  * The animated objects (section 5) are created here and ticked from `update()`;
- * screens and interactions hang off this class later.
+ * `liveScreens` draws the screen contents (section 6); interactions hang off
+ * this class later.
  */
 export default class World {
   models: Record<ModelName, THREE.Group>;
@@ -27,13 +29,15 @@ export default class World {
   chairTop: ChairTop;
   roomba: Roomba;
   coffeeSteam: CoffeeSteam | null = null;
+  /** Contents of the screens; `screens` above holds the meshes. */
+  liveScreens: Screens;
 
   private scene: THREE.Scene;
   private time: Time;
   private root = new THREE.Group();
   private clay: THREE.MeshStandardMaterial | null = null;
 
-  constructor(scene: THREE.Scene, time: Time, source: RoomSource) {
+  constructor(scene: THREE.Scene, time: Time, source: RoomSource, options: ScreensOptions = {}) {
     this.scene = scene;
     this.time = time;
     this.models = source.models;
@@ -65,6 +69,7 @@ export default class World {
       this.coffeeSteam = new CoffeeSteam(source.steam);
       this.root.add(source.steam);
     }
+    this.liveScreens = new Screens(this.screens, options);
 
     scene.add(this.root);
   }
@@ -85,10 +90,12 @@ export default class World {
     this.chairTop.update(this.time.elapsed);
     this.roomba.update(this.time.delta);
     this.coffeeSteam?.update(this.time.elapsed);
+    this.liveScreens.update(this.time.delta);
   }
 
   destroy(): void {
     this.roomba.destroy();
+    this.liveScreens.destroy();
     this.scene.remove(this.root);
     const materials = new Set<THREE.Material>();
     this.root.traverse((child) => {

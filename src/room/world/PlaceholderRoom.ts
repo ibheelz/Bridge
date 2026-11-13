@@ -206,12 +206,12 @@ export function createPlaceholderRoom(): RoomSource {
       SCREEN_OFF,
     ),
     // On the laptop lid, tilted with it.
-    screenMacbook: screen('screenMacbook', 0.9, 0.62, lidPoint(0.34, 0.017), lidRotation, SCREEN_OFF),
+    screenMacbook: screen('screenMacbook', 0.9, 0.59, lidPoint(0.34, 0.017), lidRotation, SCREEN_OFF),
     // On the door; World re-parents it to the door so it swings with it.
     screenWhiteboard: screen(
       'screenWhiteboard',
       0.9,
-      1.51,
+      1.39,
       [door.hingeX + door.width / 2, 2.75, doorFront],
       [0, 0, 0],
       '#f7f6f2',
