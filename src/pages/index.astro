@@ -34,6 +34,10 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
       content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <title>Abiola Adeyeye</title>
+    <script is:inline>
+      // Coming back from the portfolio: start under black, before anything paints.
+      if (location.hash === '#powerdown') document.documentElement.classList.add('is-powerdown');
+    </script>
     <style is:global>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html, body {
@@ -96,6 +100,21 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
         transform-origin: left center;
         transition: transform 0.3s ease;
       }
+      /* Full-screen black for leaving to, and arriving from, the portfolio (CRT mode). */
+      .blackout {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        background: #000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.45s ease;
+      }
+      .blackout.is-on,
+      .is-powerdown .blackout {
+        opacity: 1;
+        transition: none;
+      }
       .loading__percent {
         font: 12px/1 ui-sans-serif, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
         letter-spacing: 0.12em;
@@ -114,6 +133,7 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
             data-assets={JSON.stringify(assets)}
             data-draco={`${base}draco/`}
             data-tv-video={tvVideo}
+            data-portfolio={`${base}portfolio/`}
           >
           </div>
           {
@@ -127,6 +147,7 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
         </div>
       </div>
     </main>
+    <div class="blackout" aria-hidden="true"></div>
     <script>
       import Experience from '../room/Experience';
       import { initLoading } from '../ui/loading';
@@ -138,6 +159,7 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
           assets: JSON.parse(target.dataset.assets ?? '[]') as string[],
           dracoPath: target.dataset.draco,
           tvVideo: target.dataset.tvVideo || undefined,
+          portfolioUrl: target.dataset.portfolio,
         });
         initLoading(document.querySelector<HTMLElement>('.loading'), experience.resources);
       }

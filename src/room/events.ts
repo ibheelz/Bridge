@@ -9,11 +9,31 @@ export const EVENTS = {
   tvToggle: 'kai:tv-toggle',
   doorToggle: 'kai:door-toggle',
   zoom: 'kai:zoom',
+  crtMode: 'kai:crtmode',
+  crtScreenOn: 'kai:crt-screen-on',
+  powerdownArrive: 'kai:powerdown-arrive',
 } as const;
 
 export interface HoverDetail {
   id: 'computer';
   hovered: boolean;
+}
+
+export type CrtPhase =
+  | 'idle'
+  | 'powering'
+  | 'pushing'
+  | 'booting'
+  | 'lightsout'
+  | 'blackhold'
+  | 'black'
+  | 'aborting'
+  | 'arrivewait'
+  | 'arrive'
+  | 'arrivepull';
+
+export interface CrtModeDetail {
+  phase: CrtPhase;
 }
 
 export function emit(name: string, detail?: unknown): void {

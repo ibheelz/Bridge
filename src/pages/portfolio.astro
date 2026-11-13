@@ -1,0 +1,51 @@
+---
+// Placeholder for the destination behind the computer (analysis section 12).
+// What goes here is the user's decision; "Home" plays the arrival in the room.
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+---
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Portfolio (placeholder) | Abiola Adeyeye</title>
+    <style is:global>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { min-height: 100%; background: #000; }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding: 32px;
+        color: #d3d3d3;
+        font: 16px/1.6 'Courier New', Courier, monospace;
+      }
+      main { max-width: 34rem; }
+      h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: #fff; }
+      p { margin-bottom: 1.5rem; }
+      a {
+        display: inline-block;
+        padding: 0.5rem 1.25rem;
+        border: 1px solid #d3d3d3;
+        color: #fff;
+        text-decoration: none;
+      }
+      a:hover, a:focus-visible { background: #d3d3d3; color: #000; outline: none; }
+      /* Fade in from the black the room page left on. */
+      main { animation: arrive 0.6s ease both; }
+      @keyframes arrive { from { opacity: 0; } }
+      @media (prefers-reduced-motion: reduce) { main { animation: none; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Portfolio (placeholder)</h1>
+      <p>
+        Placeholder page. The real contents of the computer go here: projects, videos and
+        whatever else is decided for it.
+      </p>
+      <a href={`${base}#powerdown`}>Home</a>
+    </main>
+  </body>
+</html>

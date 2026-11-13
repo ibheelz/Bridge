@@ -79,6 +79,12 @@ export default class Interactions {
     this.setHover(null);
   }
 
+  /** Forget the hover and any press in progress; a mode calls this when it takes over. */
+  release(): void {
+    this.press = null;
+    this.setHover(null);
+  }
+
   private get active(): boolean {
     return this.enabled && !this.navigation.suspended;
   }

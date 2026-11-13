@@ -38,6 +38,8 @@ export default class World {
   private time: Time;
   private root = new THREE.Group();
   private clay: THREE.MeshStandardMaterial | null = null;
+  /** Colours of the materials `setDim` has darkened, to bring them back. */
+  private dimmed = new Map<THREE.Material, THREE.Color>();
 
   constructor(scene: THREE.Scene, time: Time, source: RoomSource, options: ScreensOptions = {}) {
     this.scene = scene;
@@ -88,6 +90,35 @@ export default class World {
       this.root.add(sun, new THREE.AmbientLight('#ffffff', 0.9));
     }
     return this.clay;
+  }
+
+  /**
+   * Lights-out for CRT mode (analysis section 8.1): multiplies every material
+   * colour down, 1 = as built, 0 = black. The CRT screen has its own level so
+   * it can go dark after the room. Meshes whose material has no colour (the
+   * steam shader) are hidden while their level is below 1.
+   */
+  setDim(room: number, crt: number): void {
+    const crtMesh = this.screens.screenCRT;
+    this.root.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+      const level = child === crtMesh ? crt : room;
+      const material = child.material as THREE.Material | THREE.Material[];
+      for (const m of Array.isArray(material) ? material : [material]) {
+        const color = (m as THREE.MeshBasicMaterial).color;
+        if (!(color instanceof THREE.Color)) {
+          child.visible = level >= 1;
+          continue;
+        }
+        let original = this.dimmed.get(m);
+        if (!original) {
+          original = color.clone();
+          this.dimmed.set(m, original);
+        }
+        color.copy(original).multiplyScalar(level);
+      }
+    });
+    if (room >= 1 && crt >= 1) this.dimmed.clear();
   }
 
   update(): void {

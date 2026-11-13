@@ -8,6 +8,7 @@ import Resources from './utils/Resources';
 import type { ResourceGroup } from './utils/Resources';
 import World from './world/World';
 import Interactions from './world/Interactions';
+import CRTMode from './modes/CRTMode';
 import { createBaseGroup } from './assets';
 import { createLoadedRoom } from './world/LoadedRoom';
 import { createPlaceholderRoom } from './world/PlaceholderRoom';
@@ -20,6 +21,8 @@ export interface ExperienceOptions {
   dracoPath?: string;
   /** URL of the video for the TV screen, when `public/assets/screens/` holds one. */
   tvVideo?: string;
+  /** Page the computer leads to. Defaults to `<base>portfolio/`. */
+  portfolioUrl?: string;
 }
 
 declare global {
@@ -48,8 +51,11 @@ export default class Experience {
   navigation!: Navigation;
   /** Hover and click on the room's objects; exists once `world` does. */
   interactions: Interactions | null = null;
+  /** The computer's boot-and-leave sequence, and the arrival back; exists once `world` does. */
+  crtMode: CRTMode | null = null;
 
   private tvVideo?: string;
+  private portfolioUrl!: string;
 
   constructor(options?: ExperienceOptions) {
     if (Experience.instance) return Experience.instance;
@@ -59,6 +65,8 @@ export default class Experience {
 
     this.targetElement = options.targetElement;
     this.tvVideo = options.tvVideo;
+    this.portfolioUrl =
+      options.portfolioUrl ?? `${import.meta.env.BASE_URL.replace(/\/?$/, '/')}portfolio/`;
     this.config = { debug: window.location.hash === '#debug' };
 
     this.time = new Time();
@@ -87,6 +95,16 @@ export default class Experience {
       tvVideo: this.tvVideo,
     });
     this.interactions = new Interactions(this.camera, this.navigation, this.targetElement, this.world);
+    this.crtMode = new CRTMode({
+      camera: this.camera,
+      navigation: this.navigation,
+      sizes: this.sizes,
+      time: this.time,
+      world: this.world,
+      interactions: this.interactions,
+      element: this.targetElement,
+      destination: this.portfolioUrl,
+    });
   }
 
   private resize(): void {
@@ -94,9 +112,10 @@ export default class Experience {
     this.renderer.resize();
   }
 
-  /** Frame order follows section 4.1; modes and audio slot in later. */
+  /** Frame order follows section 4.1; a mode writes the camera before the render. Audio slots in later. */
   private update(): void {
     this.camera.update();
+    this.crtMode?.update();
     this.renderer.render();
     this.world?.update();
     this.navigation.update();
@@ -107,6 +126,8 @@ export default class Experience {
     this.sizes.destroy();
     this.resources.destroy();
     this.navigation.destroy();
+    this.crtMode?.destroy();
+    this.crtMode = null;
     this.interactions?.destroy();
     this.interactions = null;
     this.world?.destroy();

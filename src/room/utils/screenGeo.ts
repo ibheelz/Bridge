@@ -12,6 +12,15 @@ export interface ScreenGeo {
   box: THREE.Box3;
 }
 
+/**
+ * The vertical field of view, in degrees, that makes `width` world units fill
+ * the view horizontally from `distance` away (analysis section 7). Clamped to 16-72.
+ */
+export function fovToFrame(width: number, distance: number, aspect: number): number {
+  const fov = 2 * Math.atan(width / (2 * Math.max(aspect, 0.01)) / distance);
+  return THREE.MathUtils.clamp(THREE.MathUtils.radToDeg(fov), 16, 72);
+}
+
 const UP = new THREE.Vector3(0, 1, 0);
 
 /**

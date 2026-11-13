@@ -6,6 +6,9 @@ import TestPattern from './screens/TestPattern';
 import VideoScreen from './screens/VideoScreen';
 import Whiteboard from './screens/Whiteboard';
 
+/** Same dark colour the room sources give a screen that is off. */
+const SCREEN_OFF = '#15161a';
+
 export interface ScreensOptions {
   /** URL of the video for the TV. Without one the TV shows a generated pattern. */
   tvVideo?: string;
@@ -16,8 +19,8 @@ export interface ScreensOptions {
  *
  * Each screen with content gets a `MeshBasicMaterial({ map })`, and the
  * content is ticked every frame. A screen without content keeps the dark
- * material its room source gave it: that is the CRT until the boot sequence
- * of step 7 calls `set('screenCRT', …)`.
+ * material its room source gave it: that is the CRT, which only shows something while
+ * `CRTMode` runs its boot sequence (`set('screenCRT', …)`, then `clear`).
  */
 export default class Screens {
   private meshes: Record<ScreenName, THREE.Mesh>;
@@ -60,6 +63,16 @@ export default class Screens {
     (mesh.material as THREE.Material).dispose();
     // Not tone mapped: a screen shows its canvas colours as drawn.
     mesh.material = new THREE.MeshBasicMaterial({ map: content.texture, toneMapped: false });
+  }
+
+  /** Switch a screen off: drop its content and leave a flat dark material. */
+  clear(name: ScreenName, color: THREE.ColorRepresentation = SCREEN_OFF): void {
+    this.contents.get(name)?.destroy();
+    this.contents.delete(name);
+
+    const mesh = this.meshes[name];
+    (mesh.material as THREE.Material).dispose();
+    mesh.material = new THREE.MeshBasicMaterial({ color });
   }
 
   update(deltaMs: number): void {
