@@ -172,6 +172,11 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
         outline-offset: 6px;
         border-radius: 4px;
       }
+      @media (prefers-reduced-motion: reduce) {
+        .edge-word,
+        .edge-word__role,
+        .edge-word__sub { transition: none !important; }
+      }
       /* Settings and sound (section 10, "Overlay buttons"); padded to a 44 px hit area. */
       .overlay__button {
         position: fixed;

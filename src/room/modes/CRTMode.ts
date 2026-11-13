@@ -9,6 +9,7 @@ import type Time from '../utils/Time';
 import type Interactions from '../world/Interactions';
 import BiosBoot from '../world/screens/BiosBoot';
 import type World from '../world/World';
+import { flightMs } from '../utils/motion';
 
 /** Analysis section 8.1. Durations in milliseconds. */
 const POWERING_MS = 320;
@@ -314,9 +315,9 @@ export default class CRTMode {
         break;
 
       case 'pushing': {
-        const t = easeInOutCubic(Math.min(1, this.phaseTime / PUSHING_MS));
+        const t = easeInOutCubic(Math.min(1, this.phaseTime / flightMs(PUSHING_MS)));
         this.tween(t, this.pushPosition, this.screenCenter, homeFov, this.pushFov());
-        if (this.phaseTime >= PUSHING_MS) this.setPhase('booting');
+        if (this.phaseTime >= flightMs(PUSHING_MS)) this.setPhase('booting');
         break;
       }
 
@@ -343,9 +344,9 @@ export default class CRTMode {
         break;
 
       case 'aborting': {
-        const t = easeInOutCubic(Math.min(1, this.phaseTime / ABORTING_MS));
+        const t = easeInOutCubic(Math.min(1, this.phaseTime / flightMs(ABORTING_MS)));
         this.tween(t, this.homeCamera.position, this.navigation.target.smoothed, this.fromFov, homeFov);
-        if (this.phaseTime >= ABORTING_MS) this.handBack();
+        if (this.phaseTime >= flightMs(ABORTING_MS)) this.handBack();
         break;
       }
 
@@ -372,9 +373,9 @@ export default class CRTMode {
         break;
 
       case 'arrivepull': {
-        const t = easeInOutCubic(Math.min(1, this.phaseTime / ARRIVE_PULL_MS));
+        const t = easeInOutCubic(Math.min(1, this.phaseTime / flightMs(ARRIVE_PULL_MS)));
         this.tween(t, this.homeCamera.position, this.navigation.target.smoothed, this.closeFov(), homeFov);
-        if (this.phaseTime >= ARRIVE_PULL_MS) {
+        if (this.phaseTime >= flightMs(ARRIVE_PULL_MS)) {
           this.handBack();
           this.screenOnTimer = window.setTimeout(() => {
             if (this.phase !== 'idle') return;

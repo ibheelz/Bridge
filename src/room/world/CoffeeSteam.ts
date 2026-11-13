@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { prefersReducedMotion } from '../utils/motion';
 
 /**
  * 2D classic Perlin noise, from "webgl-noise" by Stefan Gustavson and Ian
@@ -104,7 +105,9 @@ export default class CoffeeSteam {
     mesh.frustumCulled = false;
   }
 
+  /** Frozen where it is with reduced motion. */
   update(elapsedMs: number): void {
+    if (prefersReducedMotion()) return;
     this.material.uniforms.uTime.value = elapsedMs;
   }
 }

@@ -6,6 +6,7 @@ import { widenForPortrait } from '../utils/screenGeo';
 import type Sizes from '../utils/Sizes';
 import type Time from '../utils/Time';
 import type Interactions from '../world/Interactions';
+import { flightMs, prefersReducedMotion } from '../utils/motion';
 
 export type FlyPhase = 'idle' | 'entering' | 'active' | 'leaving';
 
@@ -162,7 +163,7 @@ export default abstract class FlyMode {
 
     switch (this.phase) {
       case 'entering':
-        this.progress = Math.min(1, this.phaseTime / config.enterMs);
+        this.progress = Math.min(1, this.phaseTime / flightMs(config.enterMs));
         this.tween(config.position, config.target, modeFov);
         if (this.progress >= 1) {
           this.setPhase('active');
@@ -175,7 +176,7 @@ export default abstract class FlyMode {
         this.progress = 1;
         this.position.copy(config.position);
         const drift = config.drift;
-        if (drift) {
+        if (drift && !prefersReducedMotion()) {
           const t = this.time.elapsed;
           this.position.addScaledVector(drift.right, Math.sin(t * drift.x.speed) * drift.x.amount);
           this.position.y += Math.cos(t * drift.y.speed) * drift.y.amount;
@@ -186,7 +187,7 @@ export default abstract class FlyMode {
       }
 
       case 'leaving': {
-        this.progress = Math.min(1, this.phaseTime / config.exitMs);
+        this.progress = Math.min(1, this.phaseTime / flightMs(config.exitMs));
         const home = this.camera.modes[this.camera.mode].instance;
         this.tween(home.position, this.navigation.target.smoothed, fovForAspect(this.sizes.aspect));
         if (this.progress >= 1) {
