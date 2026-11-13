@@ -197,5 +197,8 @@ Build the room procedurally in code behind the same interfaces the GLB loader wi
 
 - Desk mats (user request, 2026-11-13): a long patterned mat under each keyboard. Design desk: charcoal with a dot grid and flowing teal lines (z -1.5 to 0.8, the tablet sits beyond it). IT desk: deep navy with circuit traces and pads in muted blue (z -1.4 to 1.4). Patterns are drawn on canvases in `PlaceholderRoom.ts` (`MAT_STYLES`); the mats keep their own lit material (`userData.ownMaterial`, which World now leaves alone). Colours chosen dark and muted so they do not fight the walnut desks, the RGB or the status lights.
 
+- Network gear on the rack (user request, 2026-11-13): silver 24-port switch, 8-port switch and a router stacked on top of the IT rack, each with dark ports, a blinking light over each port (green on the switches, blue on the router), a round power button with a steady blue light and a dark reset button; three router antennas. The stack now reaches about y 3.9, so it covers a little more of the right window's lower-right corner.
+- Two-finger trackpad pan (user request, 2026-11-13): in `Navigation.onWheel`, a two-finger trackpad swipe now pans (room follows the fingers), trackpad pinch (ctrl + wheel) zooms, and a mouse wheel still zooms. Trackpad vs mouse is a heuristic (`isTrackpadSwipe`: legacy `wheelDeltaY === -3 * deltaY` in Chrome/Safari, pixel mode in Firefox, any horizontal delta). Pan stays inside the locked `LIMITS`; no limit was changed. Touch screens already panned with two fingers. NOT checked on a real trackpad or mouse.
+
 ## Next step
 Nothing left that can be done without the user. Next is the browser check (checklist in `auto-dev/HANDOFF.md`, section 8), then the blocked items at the top of this file.

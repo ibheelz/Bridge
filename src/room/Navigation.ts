@@ -24,6 +24,21 @@ const ORBIT_SENSITIVITY = 1;
 const PAN_PER_PIXEL = 0.01;
 const ZOOM_PER_PIXEL = 0.01;
 const PINCH_FACTOR = 3;
+/** Trackpad pinch arrives as small ctrl + wheel steps; scaled up to feel like a touch pinch. */
+const PINCH_WHEEL_FACTOR = 4;
+
+/**
+ * Best guess at "this wheel event is a two-finger trackpad swipe, not a mouse
+ * wheel". Chrome and Safari also send the old `wheelDeltaY`, which is exactly
+ * -3 x `deltaY` for trackpads (a mouse wheel moves in steps of 120); Firefox
+ * reports mouse wheels in lines and trackpads in pixels.
+ */
+function isTrackpadSwipe(e: WheelEvent): boolean {
+  const legacy = (e as WheelEvent & { wheelDeltaY?: number }).wheelDeltaY;
+  if (e.deltaX !== 0 && e.deltaMode === 0) return true;
+  if (legacy) return legacy === -3 * e.deltaY;
+  return e.deltaMode === 0;
+}
 const TAP_MAX_MS = 250;
 const TAP_MAX_TRAVEL = 12;
 const DOUBLE_TAP_GAP_MS = 350;
@@ -279,10 +294,20 @@ export default class Navigation {
     if (!this.suspended) this.reset();
   };
 
+  /**
+   * Mouse wheel and trackpad pinch (ctrl + wheel) zoom; a two-finger swipe on
+   * a trackpad pans, the room following the fingers like a one-finger drag.
+   */
   private onWheel = (e: WheelEvent): void => {
     e.preventDefault();
     if (this.suspended) return;
-    this.zoom(normalizeWheel(e).pixelY);
+    if (e.ctrlKey) {
+      this.zoom(normalizeWheel(e).pixelY * PINCH_WHEEL_FACTOR);
+    } else if (isTrackpadSwipe(e)) {
+      this.pan(-e.deltaX, -e.deltaY);
+    } else {
+      this.zoom(normalizeWheel(e).pixelY);
+    }
   };
 
   private onTouchMove = (e: TouchEvent): void => {
