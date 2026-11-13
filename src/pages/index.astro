@@ -31,7 +31,7 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <title>Abiola Adeyeye</title>
     <script is:inline>
@@ -52,7 +52,6 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
         position: fixed;
         inset: 0;
         background: #010101;
-        touch-action: none;
         user-select: none;
         -webkit-user-select: none;
       }
@@ -66,10 +65,12 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
         background: radial-gradient(120% 90% at 50% 38%, #ffffff 0, #f1eee8 55%, #dcd7cf);
       }
       /* Labels will sit at z-index 1, behind this transparent canvas layer. */
+      /* touch-action here, not on the page: pinch zooms the room, while the rest of the page stays zoomable. */
       .room-experience__target {
         position: absolute;
         inset: 0;
         z-index: 2;
+        touch-action: none;
       }
       /* Edge words (section 10). Text at z 1 behind the transparent canvas (z 2); proxies at z 6 take the clicks. */
       .edge-word {
