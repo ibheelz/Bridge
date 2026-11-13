@@ -1,3 +1,13 @@
+# Status: code steps complete
+
+Steps 0 to 10 and 12 are built and committed on `auto-dev` (not pushed). `npm run build`: 2 pages, 0 errors, 0 warnings, 0 hints. **None of it has been checked in a browser.** The unattended loop is stopped (`auto-dev/STOP`).
+
+Blocked on the user:
+- Real room models and baked textures (needs Blender). The loader switches to them once all 12 GLBs are in `public/assets/` (`MODEL_NAMES` in `src/room/assets.ts`); the roomba path JSON must then be re-exported to match.
+- The destination app behind the computer (spec phase 11). `/portfolio` stays a minimal page until that is decided.
+- Real content: name, roles, label copy, project list, videos, meta description, OG image.
+- The 8 `npm audit` findings from step 0.
+
 # Bridge auto-dev progress
 
 Spec: `KAI-HOUSE-ANALYSIS.md` (phases are section 13.3).
@@ -21,7 +31,7 @@ Build the room procedurally in code behind the same interfaces the GLB loader wi
 - [x] 8. TV mode (composer, bokeh, background swap) and laptop mode with its panel.
 - [x] 9. HTML labels, room-rect placement, luma probe, role rotation, settings + sound buttons.
 - [x] 10. Audio graph: synthesized roomba, mute, duck, tab-away suspend. Skip sample files that do not exist.
-- [ ] 12. Polish: reduced motion, no-WebGL fallback, context loss, dispose, meta/OG tags.
+- [x] 12. Polish: reduced motion, no-WebGL fallback, context loss, dispose, meta/OG tags.
 
 ## Blocked on user (do not attempt)
 - Real room models and baked textures (needs Blender).
@@ -121,5 +131,15 @@ Build the room procedurally in code behind the same interfaces the GLB loader wi
 - Step 10: TV audio. The section 9 TV chain is in the code but only builds when the TV content is a real `VideoScreen` (a video file in `public/assets/screens/`) at the moment audio starts; the video is unmuted only then. There is no video file, so today the TV is silent and this path has never run. If the video fails later and falls back to the pattern, its chain just goes quiet. The TV's wet path has its own convolver, as drawn in the spec.
 - Step 10: NOT checked in a browser (and not listened to). Only `npm run build` (0 errors, 0 warnings, 0 hints). To check: nothing plays before the first click; a faint hum fades in over 8 s; the hum pans left and right as you orbit and quietens toward the screen edge; the sound button silences it and is remembered after a reload; switching tabs or windows stops it; clicking the computer ducks it. Tune `ROOM_TONE_LEVEL` and `ROOMBA_GAIN` at the top of `Audio.ts` if it is too loud or too quiet.
 
+- Step 12.1: reduced motion. `src/room/utils/motion.ts` holds the media query and follows changes (`prefersReducedMotion()`, `flightMs(ms)`). With it on: FlyMode fly-in/out and CRT push, fly-back and arrival pull-back are at most 300 ms (CRT holds such as the 900 ms close-up and the boot text are unchanged); TV drift is off; the chair rests at its base angle; the steam freezes; label and role fades are off (CSS media query plus the role code from step 9a).
+- Step 12.2: no WebGL. The boot script tests `webgl2`/`webgl` on a throwaway canvas; without it, or if `new Experience()` throws, `.page` gets `no-webgl` and a plain block shows "Placeholder name", a placeholder line and a normal link to `/portfolio`. A `<noscript>` shows the same block and hides the labels, overlay and keyboard buttons. If the constructor throws halfway, only its frame loop is stopped; the rest is left as is.
+- Step 12.3: context loss is handled in `Renderer.ts`: `webglcontextlost` is prevented and rendering stops (`renderer.contextLost`); on restore the renderer is resized and every canvas and video texture in the scene (material properties, shader uniforms, the TV background) is flagged `needsUpdate`. three.js re-creates the rest, including the composer targets, on next use. Can be tested in the console with the `WEBGL_lose_context` extension.
+- Step 12.4: dispose audit. All `destroy()` methods already removed their listeners; World frees geometry, materials and maps. Gaps fixed: TV mode now disposes every composer pass (bokeh targets and materials, output pass) and not just the bokeh pass; the renderer drops its post chain and context listeners. Not fixed: the page-level UI (`src/ui/*`) is not torn down by `Experience.destroy()`; `initRoomRect` and `initLumaProbe` return clean-up functions if that is ever needed. The `motion.ts` media listener lives for the page's lifetime.
+- Step 12.5: keyboard. Two buttons, "Open the laptop" and "Watch the TV", are clipped out of sight until they get keyboard focus, then show as a dark pill at the bottom centre. Tab order: computer (left label proxy), role proxy, laptop, TV, settings, sound. All are disabled during modes. Esc leaves every mode (CRT also takes Delete); the laptop panel's own close button gets focus when it opens.
+- Step 12.6: the viewport no longer blocks zoom. `touch-action: none` moved from `.page` to `#room`, so pinch on the canvas zooms the room while pinch on the labels or buttons zooms the page.
+- Step 12.7: both pages have a placeholder description, canonical link, `og:title/description/type/url` and `twitter:card` (`summary`). URLs are built from `site` in `astro.config.mjs` (`https://abioladeyeye.com`). No `og:image`: there is no image yet; add one and switch `twitter:card` to `summary_large_image`.
+- Step 12.8: `build.chunkSizeWarningLimit` is 800 kB in `astro.config.mjs` (the room script is 667 kB, 173 kB gzipped, nearly all three.js). A dynamic import would not be a one-line change, since the page needs three.js at once. The 719 kB `draco_decoder.js` in `dist/_astro/` is an emitted asset from three's DRACOLoader that is never downloaded (see step 3).
+- Steps 12.1 to 12.8: NOT checked in a browser. Only `npm run build` (0 errors, 0 warnings, 0 hints). Worth trying: macOS "Reduce motion" on, then open the laptop and the TV; Chrome DevTools rendering panel with WebGL disabled for the fallback; Tab through the page; pinch on a phone.
+
 ## Next step
-Step 9, the HTML layer. Read section 10 of `KAI-HOUSE-ANALYSIS.md` (labels, room-rect placement, luma probe, role rotation, settings and sound buttons) and the `kai:hover`, `kai:room-luma`, `kai:tvmode`, `kai:suite`, `kai:crtmode` rows of section 11. Put DOM logic in `src/ui/` (one file per concern, like `src/ui/suite.ts`) and markup plus CSS in `src/pages/index.astro`. Two parts; stop after the first if the run gets long. (a) Labels: placeholder name and rotating placeholder roles, positioned from the room's projected screen rectangle (project the room's bounding box through `experience.camera.instance` each frame or on change, and expose it, e.g. as CSS variables on `.stage`); hide or fade them while `experience.modeActive` (listen to `kai:crtmode` phase !== `idle`, `kai:tvmode`, `kai:suite`); the computer hover hint driven by `kai:hover`. (b) Luma probe (emit `kai:room-luma`, switch label ink between dark and light), then the settings and sound buttons. The sound button only toggles and stores a muted flag and emits its event for now; step 10 builds the audio graph that listens to it. All copy is obvious placeholder text. Baseline: `npm run build` passes (2 pages, 0 errors); `experience.modeActive`, `suiteMode`, `tvMode`, `renderer.setPost` exist.
+Nothing left that can be done without the user. Next is the browser check (checklist in `auto-dev/HANDOFF.md`, section 8), then the blocked items at the top of this file.
