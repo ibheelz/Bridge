@@ -30,6 +30,9 @@ const CHAIR_Z = -0.05;
 const MUG: V3 = [-5.07, DESK_TOP, -1.37]; // centre of the mug's base, on the left desk
 const MUG_HEIGHT = 0.26;
 const SHOW_WHITEBOARD = false;
+/** Windows on the back wall: centre x of the left one (the right one mirrors it), size and sill. */
+const WINDOW_CENTER_X = -3.35;
+const WINDOW = { width: 2.1, sill: 2.4, height: 3.6, frame: 0.12, depth: 0.1 } as const;
 
 /** World replaces this with clay (or a baked material) before anything renders. */
 const blank = new THREE.MeshBasicMaterial({ color: '#cccccc' });
@@ -63,7 +66,8 @@ const COLORS = {
   sofaArms: '#56735d',
   pegboard: '#d8b67c',
   laptop: '#a8adb4',
-  door: '#9a6a44',
+  windowFrame: '#f4f1ea',
+  glass: '#a9cfe8',
   roomba: '#30343a',
   book: '#d34b5c',
   remote: '#232326',
@@ -138,6 +142,28 @@ function screen(
 }
 
 const SCREEN_OFF = '#15161a';
+
+/**
+ * A window drawn on the inside of the back wall: a pale glass panel inside a
+ * frame, split into four panes. The wall behind is not cut; it is a placeholder.
+ */
+function windowOnBackWall(cx: number): THREE.Mesh[] {
+  const { width, sill, height, frame, depth } = WINDOW;
+  const z0 = -HALF_Z;
+  const x0 = cx - width / 2;
+  const x1 = cx + width / 2;
+  const y1 = sill + height;
+  const ym = sill + height / 2;
+  return [
+    box([x0, sill, z0], [x1, y1, z0 + 0.02], COLORS.glass),
+    box([x0 - frame, sill - frame, z0], [x1 + frame, sill, z0 + depth], COLORS.windowFrame), // sill
+    box([x0 - frame, y1, z0], [x1 + frame, y1 + frame, z0 + depth], COLORS.windowFrame), // head
+    box([x0 - frame, sill, z0], [x0, y1, z0 + depth], COLORS.windowFrame), // jambs
+    box([x1, sill, z0], [x1 + frame, y1, z0 + depth], COLORS.windowFrame),
+    box([cx - frame / 3, sill, z0], [cx + frame / 3, y1, z0 + depth * 0.8], COLORS.windowFrame), // mullion
+    box([x0, ym - frame / 3, z0], [x1, ym + frame / 3, z0 + depth * 0.8], COLORS.windowFrame), // transom
+  ];
+}
 
 type Side = 'left' | 'right';
 
@@ -239,8 +265,6 @@ export function createPlaceholderRoom(): RoomSource {
     box([1.55, F, 1.9], [1.8, SOFA_SEAT + 0.4, 3.45], COLORS.sofaArms),
   ]);
 
-  // --- Wall decor: a pegboard on the back wall by each desk ----------------
-  const wallDecor = model('wallDecor', [-HALF_X + 1.3, 3.6, -HALF_Z], [...left.decor, ...right.decor]);
 
   // --- Laptop on the table, screen facing the sofa (+z) -------------------
   const mac = { x: -0.13, z: -0.75, width: 0.96, depth: 0.66, tilt: 0.28 };
@@ -262,15 +286,17 @@ export function createPlaceholderRoom(): RoomSource {
     lid,
   ]);
 
-  // --- Door on the back wall, left of the TV, pivot on the hinge ----------
-  const door = { hingeX: -4.4, width: 1.3, top: 3.9, z: -4.62, thickness: 0.08 };
-  const doorModel = model('door', [door.hingeX, F, door.z], [
-    box(
-      [door.hingeX, F, door.z - door.thickness / 2],
-      [door.hingeX + door.width, door.top, door.z + door.thickness / 2],
-      COLORS.door,
-    ),
-  ]);
+  // --- No door (user request): the door model is an empty hinge node -----
+  // `door` is a required model, so it stays as a pivot with nothing on it; the
+  // (hidden) whiteboard screen hangs from it.
+  const door = { hingeX: -4.4, width: 1.3, z: -4.62, thickness: 0.08 };
+  const doorModel = model('door', [door.hingeX, F, door.z], []);
+
+  // --- Windows on the back wall, either side of the TV ----------------------
+  const windows = [WINDOW_CENTER_X, -WINDOW_CENTER_X].flatMap((x) => windowOnBackWall(x));
+
+  // --- Wall decor: a pegboard by each desk, and the windows --------------
+  const wallDecor = model('wallDecor', [-HALF_X + 1.3, 3.6, -HALF_Z], [...left.decor, ...right.decor, ...windows]);
 
   // --- Small props --------------------------------------------------------
   const roomba = model('roomba', [-3, F, 4.1], [cylinder([-3, F, 4.1], 0.45, 0.18, COLORS.roomba)]);
@@ -323,7 +349,7 @@ export function createPlaceholderRoom(): RoomSource {
 
   return {
     steam,
-    // The leaf runs from the hinge toward +x, so a negative turn swings it into the room (+z).
+    // No door leaf now; kept so a door can come back with the same hinge.
     doorOpenAngle: THREE.MathUtils.degToRad(-25),
     models: {
       roomModel,

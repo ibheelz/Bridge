@@ -161,5 +161,7 @@ Build the room procedurally in code behind the same interfaces the GLB loader wi
 - Colours (user request, 2026-11-13): every placeholder object now has its own clay colour (`COLORS` at the top of `PlaceholderRoom.ts`: walnut desks, beige CRTs, sage sofa, blue rug, cork pegboards, and so on). A mesh's `userData.clayColor` makes World give it a clay material in that colour (one per colour, same roughness and lights); baked textures still win, and real GLBs without bakes still get plain clay.
 - Whiteboard hidden (user request: the "To do (placeholder)" sheet on the door, confirmed by the user). `SHOW_WHITEBOARD = false` in `PlaceholderRoom.ts` hides the mesh, and `Screens` skips drawing it. The mesh stays because `screenWhiteboard` is a required screen.
 
+- Door removed, windows added (user request, 2026-11-13). The placeholder's `door` model is now an empty hinge node (the model and `Door.ts` stay, since `door` is a required model and the hidden whiteboard hangs from it). Two windows sit on the back wall either side of the TV (centres x = +/-3.35, 2.1 wide, sill at y 2.4, 3.6 tall): a pale blue glass panel in an off-white frame with a cross bar, drawn on the wall's surface (no hole is cut). Hidden meshes no longer take clicks (`Interactions`). Sizes are `WINDOW` and `WINDOW_CENTER_X` in `PlaceholderRoom.ts`. NOT checked in a browser.
+
 ## Next step
 Nothing left that can be done without the user. Next is the browser check (checklist in `auto-dev/HANDOFF.md`, section 8), then the blocked items at the top of this file.

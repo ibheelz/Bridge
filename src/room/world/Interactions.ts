@@ -48,7 +48,8 @@ export default class Interactions {
 
     const add = (id: TargetId, root: THREE.Object3D): void => {
       root.traverse((child) => {
-        if (!(child instanceof THREE.Mesh) || this.ids.has(child)) return;
+        // Hidden meshes (the placeholder's whiteboard) do not take clicks.
+        if (!(child instanceof THREE.Mesh) || !child.visible || this.ids.has(child)) return;
         this.ids.set(child, id);
         this.meshes.push(child);
       });
