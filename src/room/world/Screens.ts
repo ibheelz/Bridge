@@ -2,12 +2,13 @@ import * as THREE from 'three';
 import type { RoomScreens, ScreenName } from '../assets';
 import type { ScreenContent } from './screens/CanvasScreen';
 import MacScreen from './screens/MacScreen';
-import TestPattern from './screens/TestPattern';
 import VideoScreen from './screens/VideoScreen';
 import Whiteboard from './screens/Whiteboard';
 
 /** Same dark colour the room sources give a screen that is off. */
 const SCREEN_OFF = '#15161a';
+/** The TV with nothing to play: black. */
+const TV_OFF = '#000000';
 
 export interface ScreensOptions {
   /** URL of the video for the TV. Without one the TV shows a generated pattern. */
@@ -32,14 +33,18 @@ export default class Screens {
     // A room can leave the whiteboard out by hiding its mesh (the placeholder does).
     if (meshes.screenWhiteboard.visible) this.create('screenWhiteboard', () => new Whiteboard());
     this.create('screenMacbook', () => new MacScreen());
-    this.create('screenTV', () =>
-      options.tvVideo
-        ? new VideoScreen(options.tvVideo, () => {
-            console.warn(`[room] ${options.tvVideo} could not be played; the TV shows the placeholder pattern.`);
-            this.create('screenTV', () => new TestPattern());
-          })
-        : new TestPattern(),
-    );
+    // The TV plays a video from public/assets/screens/ when there is one; otherwise it is plain black
+    // (user request: no placeholder pattern). TestPattern.ts is kept but not used.
+    if (options.tvVideo) {
+      this.create('screenTV', () =>
+        new VideoScreen(options.tvVideo!, () => {
+          console.warn(`[room] ${options.tvVideo} could not be played; the TV stays black.`);
+          this.clear('screenTV', TV_OFF);
+        }),
+      );
+    } else {
+      this.clear('screenTV', TV_OFF);
+    }
   }
 
   /** A screen whose content cannot be built (no 2D canvas, say) just stays as it was. */
