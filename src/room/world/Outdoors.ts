@@ -9,8 +9,10 @@ import {
 } from '../utils/sun';
 
 /**
- * The world outside the room: a sky dome over a grass island at sea level,
- * with the sea running out to the horizon. It is real geometry, so the view
+ * The world outside the room: a sky dome over grass at sea level (far below
+ * when the room is high up), with a
+ * coastline running left to right behind the building and the sea beyond it
+ * out to the horizon (a seafront hotel). It is real geometry, so the view
  * through the windows (and past the walls) moves with the camera. Every colour
  * follows the sun's height for the visitor (see `utils/sun.ts`): blue by day,
  * warm at sunrise and sunset, dark with stars at night. The page behind the
@@ -19,18 +21,18 @@ import {
 
 /** How often the sun's height is recomputed. */
 const CHECK_MS = 30_000;
-const SKY_RADIUS = 95; // inside the camera's far plane (150) from any allowed camera position
-const GROUND_Y = 0.05; // sea level, just under the room's floor slab
+const SKY_RADIUS = 700; // inside the camera's far plane (1000) from any allowed camera position
+const DEFAULT_GROUND_Y = 0.05; // just under the room's floor slab, when the room source says nothing
 /**
- * The island: grass out to about this radius from the room's centre, with a
- * wavy shoreline and a thin strip of sand. From the home view the windows
- * look down onto the ground 14-28 units behind the room, so they show the
- * shore and the sea.
+ * The coast: grass on the building's side, the shoreline (wavy, with a strip
+ * of sand) this far behind the room's centre, sea beyond. With the room ten
+ * floors up, the windows look down onto the ground a few hundred units out,
+ * well past the shore, so they show the sea.
  */
-const ISLAND_RADIUS = 18;
-const SAND_WIDTH = 0.9;
-/** The sea blends into the horizon colour between these distances. */
-const HORIZON_FADE = { from: 30, to: 88 } as const;
+const SHORE_Z = -60;
+const SAND_WIDTH = 4;
+/** Ground and sea blend into the horizon colour between these distances. */
+const HORIZON_FADE = { from: 220, to: 660 } as const;
 const NIGHT_BELOW = -4; // sun elevation (degrees) under which the page counts as night
 
 type Palette = { top: string; horizon: string; grass: string; sand: string; sea: string };
@@ -93,18 +95,19 @@ uniform vec3 uSand;
 uniform vec3 uSea;
 uniform vec3 uHorizon;
 uniform float uDim;
-uniform float uIsland;
-uniform float uSand_;
+uniform float uShore;
+uniform float uSandWidth;
 uniform vec2 uFade;
 varying vec2 vXZ;
 void main() {
   float r = length(vXZ);
-  float a = atan(vXZ.y, vXZ.x);
-  // A wavy, fixed shoreline.
-  float shore = uIsland + 1.6 * sin(a * 3.0 + 1.0) + 1.1 * sin(a * 7.0 + 2.0) + 0.6 * sin(a * 13.0);
-  float edge = fwidth(r) + 0.04;
-  vec3 color = mix(uGrass, uSand, smoothstep(shore - edge, shore + edge, r));
-  color = mix(color, uSea, smoothstep(shore + uSand_ - edge, shore + uSand_ + edge, r));
+  float x = vXZ.x;
+  // A wavy, fixed coastline along x; seaward is -z.
+  float shore = uShore + 6.0 * sin(x * 0.045 + 1.0) + 3.0 * sin(x * 0.11 + 2.0) + 1.2 * sin(x * 0.27);
+  float out_ = shore - vXZ.y; // > 0 past the shoreline
+  float edge = fwidth(out_) + 0.04;
+  vec3 color = mix(uGrass, uSand, smoothstep(-edge, edge, out_));
+  color = mix(color, uSea, smoothstep(uSandWidth - edge, uSandWidth + edge, out_));
   color = mix(color, uHorizon, smoothstep(uFade.x, uFade.y, r));
   gl_FragColor = vec4(color * uDim, 1.0);
   #include <colorspace_fragment>
@@ -148,7 +151,8 @@ export default class Outdoors {
   private sinceCheck = Infinity;
   private applied = '';
 
-  constructor() {
+  /** `groundY`: world height of the ground and sea (the room source decides; see RoomSource.groundY). */
+  constructor(groundY = DEFAULT_GROUND_Y) {
     this.group.name = 'outdoors';
 
     this.sky = new THREE.ShaderMaterial({
@@ -178,8 +182,8 @@ export default class Outdoors {
         uSea: { value: new THREE.Color() },
         uHorizon: { value: new THREE.Color() },
         uDim: { value: 1 },
-        uIsland: { value: ISLAND_RADIUS },
-        uSand_: { value: SAND_WIDTH },
+        uShore: { value: SHORE_Z },
+        uSandWidth: { value: SAND_WIDTH },
         uFade: { value: new THREE.Vector2(HORIZON_FADE.from, HORIZON_FADE.to) },
       },
     });
@@ -187,7 +191,7 @@ export default class Outdoors {
     this.geometries.push(groundGeometry);
     const ground = new THREE.Mesh(groundGeometry, this.ground);
     ground.rotation.x = -Math.PI / 2;
-    ground.position.y = GROUND_Y;
+    ground.position.y = groundY;
 
     this.group.add(dome, ground);
 

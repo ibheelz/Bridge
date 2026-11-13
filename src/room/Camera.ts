@@ -4,19 +4,19 @@ import type Sizes from './utils/Sizes';
 /**
  * Home view (analysis section 4.4, changed for the wider three-wall room):
  * straight on from the open front (theta 0), 18 degrees above level
- * (phi 0.4 pi), close enough that the front ends of the side walls sit just
- * outside the view (about 12% past each edge), so no wall edge shows on load.
- * On wide screens the wall tops and the front strip of floor are cropped.
+ * (phi 0.4 pi), framed on the room and the corridor in front of it: at 16:9
+ * the corridor railing sits about three quarters of the way down to the bottom
+ * edge, the room's front corners near the sides, and the wall tops are cropped.
  */
 export const HOME_VIEW = {
-  radius: 24.2,
+  radius: 26,
   phi: 0.4 * Math.PI,
   theta: 0,
-  target: new THREE.Vector3(0, 3, 0),
+  target: new THREE.Vector3(0, 2.6, 3),
 } as const;
 
 const NEAR = 0.1;
-const FAR = 150;
+const FAR = 1000; // the outdoor scene reaches far: the room is ten floors up (Outdoors.ts)
 
 /**
  * The view always spans 34.8 degrees across, whatever the screen shape: the

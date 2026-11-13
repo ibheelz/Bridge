@@ -59,6 +59,11 @@ export interface RoomSource {
    * the door through the wall.
    */
   doorOpenAngle?: number;
+  /**
+   * Height of the ground and sea outside (world y). Defaults to just under the
+   * room's floor; the placeholder puts the room on the 10th floor, far above it.
+   */
+  groundY?: number;
 }
 
 /** One file for the loader. `name` is the key it ends up under in `resources.items`. */

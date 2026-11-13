@@ -30,6 +30,21 @@ const CHAIR_Z = -0.05;
 const MUG: V3 = [-5.07, DESK_TOP, -1.37]; // centre of the mug's base, on the left desk
 const MUG_HEIGHT = 0.26;
 const SHOW_WHITEBOARD = false;
+/**
+ * The building: this room is one unit in a row of identical ones (a hotel
+ * floor). The neighbours are closed blocks; a corridor with a railing runs
+ * along the front of all of them, level with the room's floor.
+ */
+const UNIT_WIDTH = 2 * (HALF_X + WALL_THICKNESS); // 14.5, centre to centre
+const UNITS_EACH_SIDE = 2;
+const BUILDING_HALF_X = HALF_X + WALL_THICKNESS + UNITS_EACH_SIDE * UNIT_WIDTH;
+const CORRIDOR = { depth: 3.7, railHeight: 1.1, postEvery: 2.0 } as const;
+const NEIGHBOUR_DOOR = { width: 1.5, height: 3.1 } as const;
+/** Floor to floor (slab underside to wall top), and how many floors are below this one (10th floor). */
+const STOREY = WALL_TOP - (FLOOR_Y - 0.25);
+const FLOORS_BELOW = 9;
+/** The ground and sea outside, at the foot of the building. */
+const GROUND_LEVEL = FLOOR_Y - 0.25 - FLOORS_BELOW * STOREY;
 /** The TV on the back wall: centred, 4.4 wide (screen x and y extents). */
 const TV = { x0: -2.2, x1: 2.2, y0: 2.49, y1: 4.86 } as const;
 /**
@@ -73,6 +88,11 @@ const COLORS = {
   sofaArms: '#56735d',
   laptop: '#a8adb4',
   windowFrame: '#f4f1ea',
+  building: '#e2dbcf',
+  seam: '#cfc6b8',
+  corridor: '#8c5a4f',
+  neighbourDoor: '#7b5236',
+  railing: '#3a3d42',
   roomba: '#30343a',
   book: '#d34b5c',
   remote: '#232326',
@@ -201,6 +221,69 @@ function backWall(F: number): THREE.Mesh[] {
   ];
 }
 
+/**
+ * The rest of the floor: closed neighbouring units either side (solid blocks
+ * with a door each onto the corridor, and a seam between units), and the
+ * corridor along the front of the whole row, with a railing at its edge.
+ */
+function building(F: number): THREE.Mesh[] {
+  const back = -HALF_Z - WALL_THICKNESS;
+  const front = HALF_Z;
+  const inner = HALF_X + WALL_THICKNESS;
+  const meshes: THREE.Mesh[] = [];
+
+  for (const sign of [-1, 1]) {
+    const x0 = sign * inner;
+    const x1 = sign * BUILDING_HALF_X;
+    meshes.push(box([Math.min(x0, x1), F - 0.25, back], [Math.max(x0, x1), WALL_TOP, front], COLORS.building));
+    for (let i = 0; i <= UNITS_EACH_SIDE; i++) {
+      // Seam at each unit boundary (including the edges of this room), down the whole facade.
+      const seamX = sign * (inner + i * UNIT_WIDTH);
+      meshes.push(box([seamX - 0.1, GROUND_LEVEL, front], [seamX + 0.1, WALL_TOP, front + 0.06], COLORS.seam));
+      if (i === UNITS_EACH_SIDE) continue;
+      const doorX = sign * (inner + (i + 0.5) * UNIT_WIDTH);
+      meshes.push(
+        box(
+          [doorX - NEIGHBOUR_DOOR.width / 2, F, front],
+          [doorX + NEIGHBOUR_DOOR.width / 2, F + NEIGHBOUR_DOOR.height, front + 0.05],
+          COLORS.neighbourDoor,
+        ),
+      );
+    }
+  }
+
+  // Corridor floor along the whole row, level with the room's floor.
+  const edge = front + CORRIDOR.depth;
+  meshes.push(box([-BUILDING_HALF_X, F - 0.25, front], [BUILDING_HALF_X, F, edge], COLORS.corridor));
+  // Railing: posts and a hand rail at the corridor's open edge.
+  const railZ = edge - 0.1;
+  const top = F + CORRIDOR.railHeight;
+  for (let x = -BUILDING_HALF_X + 0.1; x <= BUILDING_HALF_X; x += CORRIDOR.postEvery) {
+    meshes.push(box([x - 0.04, F, railZ - 0.04], [x + 0.04, top, railZ + 0.04], COLORS.railing));
+  }
+  meshes.push(box([-BUILDING_HALF_X, top - 0.06, railZ - 0.06], [BUILDING_HALF_X, top, railZ + 0.06], COLORS.railing));
+
+  // The nine floors below: one solid block, with each floor's corridor slab,
+  // a solid parapet (cheaper than posts at this distance) and a door per unit.
+  meshes.push(box([-BUILDING_HALF_X, GROUND_LEVEL, back], [BUILDING_HALF_X, F - 0.25, front], COLORS.building));
+  for (let k = 1; k <= FLOORS_BELOW; k++) {
+    const level = F - k * STOREY;
+    meshes.push(box([-BUILDING_HALF_X, level - 0.25, front], [BUILDING_HALF_X, level, edge], COLORS.corridor));
+    meshes.push(box([-BUILDING_HALF_X, level, edge - 0.15], [BUILDING_HALF_X, level + CORRIDOR.railHeight, edge], COLORS.railing));
+    for (let u = -UNITS_EACH_SIDE; u <= UNITS_EACH_SIDE; u++) {
+      const doorX = u * UNIT_WIDTH;
+      meshes.push(
+        box(
+          [doorX - NEIGHBOUR_DOOR.width / 2, level, front],
+          [doorX + NEIGHBOUR_DOOR.width / 2, level + NEIGHBOUR_DOOR.height, front + 0.05],
+          COLORS.neighbourDoor,
+        ),
+      );
+    }
+  }
+  return meshes;
+}
+
 type Side = 'left' | 'right';
 
 /** Box given in left-desk coordinates, mirrored across x = 0 for the right desk. */
@@ -266,6 +349,7 @@ export function createPlaceholderRoom(): RoomSource {
     box([-HALF_X - WALL_THICKNESS, F, -HALF_Z - WALL_THICKNESS], [-HALF_X, WALL_TOP, HALF_Z], COLORS.wall), // left
     ...backWall(F),
     box([HALF_X, F, -HALF_Z - WALL_THICKNESS], [HALF_X + WALL_THICKNESS, WALL_TOP, HALF_Z], COLORS.wall), // right
+    ...building(F),
   ]);
 
   // --- Desks along the side walls; the mug is on the left one only --------
@@ -384,6 +468,7 @@ export function createPlaceholderRoom(): RoomSource {
     steam,
     // No door leaf now; kept so a door can come back with the same hinge.
     doorOpenAngle: THREE.MathUtils.degToRad(-25),
+    groundY: GROUND_LEVEL,
     models: {
       roomModel,
       workStation,

@@ -54,7 +54,7 @@ export default class World {
     this.models = source.models;
     this.screens = source.screens;
     this.root.name = 'world';
-    this.outdoors = new Outdoors();
+    this.outdoors = new Outdoors(source.groundY);
     this.root.add(this.outdoors.group);
 
     for (const name of MODEL_NAMES) {
