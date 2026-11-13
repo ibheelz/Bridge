@@ -38,6 +38,7 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
       // Coming back from the portfolio: start under black, before anything paints.
       if (location.hash === '#powerdown') document.documentElement.classList.add('is-powerdown');
     </script>
+    <noscript><style>.overlay, .edge-word { display: none; }</style></noscript>
     <style is:global>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html, body {
@@ -220,6 +221,31 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
         opacity: 0;
         pointer-events: none;
       }
+      /* Shown instead of the room without WebGL or JavaScript (section 13.4). */
+      .fallback {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        z-index: 3;
+        transform: translate(-50%, -50%);
+        width: min(420px, calc(100% - 32px));
+        text-align: center;
+        color: #2d2b28;
+        font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+        user-select: text;
+        -webkit-user-select: text;
+      }
+      .fallback[hidden] { display: none; }
+      .fallback__name {
+        margin-bottom: 10px;
+        font-size: 22px;
+        letter-spacing: 0.06em;
+      }
+      .fallback__text { color: #6b6760; margin-bottom: 18px; }
+      .fallback__link { color: #2d2b28; }
+      .no-webgl .fallback { display: block; }
+      .no-webgl .overlay,
+      .no-webgl .edge-word { display: none; }
       /* Spec colours are near-white on a near-white page; ink is used instead. */
       .loading {
         position: absolute;
@@ -371,6 +397,18 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
             data-portfolio={`${base}portfolio/`}
           >
           </div>
+          <div class="fallback" hidden>
+          <p class="fallback__name">Placeholder name</p>
+          <p class="fallback__text">Placeholder line: this page needs WebGL to show the room.</p>
+          <a class="fallback__link" href={`${base}portfolio/`}>Open the portfolio</a>
+          </div>
+          <noscript>
+            <div class="fallback fallback--static">
+          <p class="fallback__name">Placeholder name</p>
+          <p class="fallback__text">Placeholder line: this page needs WebGL to show the room.</p>
+          <a class="fallback__link" href={`${base}portfolio/`}>Open the portfolio</a>
+            </div>
+          </noscript>
           <span class="edge-word edge-word--left" data-luma="portfolio">
             <span class="edge-word__year">(year)</span>
             <span class="edge-word__word">placeholder left</span>
@@ -449,18 +487,42 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
       initSuite(document.querySelector<HTMLElement>('.suite'));
       initLabels(document.querySelector<HTMLElement>('.room-experience'));
       initOverlay(document.querySelector<HTMLElement>('.overlay'));
+
+      /** A throwaway canvas tells whether WebGL is there before the room is built. */
+      function hasWebGL(): boolean {
+        try {
+          const canvas = document.createElement('canvas');
+          return Boolean(canvas.getContext('webgl2') || canvas.getContext('webgl'));
+        } catch {
+          return false;
+        }
+      }
+
+      function showFallback(): void {
+        document.querySelector('.page')?.classList.add('no-webgl');
+        document.querySelector<HTMLElement>('.fallback')?.removeAttribute('hidden');
+        document.documentElement.classList.remove('is-powerdown');
+      }
+
       const target = document.getElementById('room');
-      if (target) {
-        const experience = new Experience({
-          targetElement: target,
-          assets: JSON.parse(target.dataset.assets ?? '[]') as string[],
-          dracoPath: target.dataset.draco,
-          tvVideo: target.dataset.tvVideo || undefined,
-          portfolioUrl: target.dataset.portfolio,
-        });
-        initLoading(document.querySelector<HTMLElement>('.loading'), experience.resources);
-        initRoomRect(experience);
-        initLumaProbe(experience);
+      if (target && !hasWebGL()) showFallback();
+      else if (target) {
+        try {
+          const experience = new Experience({
+            targetElement: target,
+            assets: JSON.parse(target.dataset.assets ?? '[]') as string[],
+            dracoPath: target.dataset.draco,
+            tvVideo: target.dataset.tvVideo || undefined,
+            portfolioUrl: target.dataset.portfolio,
+          });
+          initLoading(document.querySelector<HTMLElement>('.loading'), experience.resources);
+          initRoomRect(experience);
+          initLumaProbe(experience);
+        } catch (error) {
+          console.warn('[room] the room could not start; showing the plain page.', error);
+          window.experience?.time?.destroy();
+          showFallback();
+        }
       }
     </script>
   </body>
