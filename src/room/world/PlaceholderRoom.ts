@@ -70,11 +70,16 @@ const COLORS = {
   sofaArms: '#56735d',
   laptop: '#a8adb4',
   windowFrame: '#f4f1ea',
-  glass: '#a9cfe8',
   roomba: '#30343a',
   book: '#d34b5c',
   remote: '#232326',
 } as const;
+
+/** Marks a mesh as window glass; World gives it the live sky. */
+function glass(mesh: THREE.Mesh): THREE.Mesh {
+  mesh.userData.windowSky = true;
+  return mesh;
+}
 
 function paint<T extends THREE.Mesh>(mesh: T, color?: string): T {
   if (color) mesh.userData.clayColor = color;
@@ -147,8 +152,9 @@ function screen(
 const SCREEN_OFF = '#15161a';
 
 /**
- * A window drawn on the inside of the back wall: a pale glass panel inside a
+ * A window drawn on the inside of the back wall: a glass panel inside a
  * frame, split into four panes. The wall behind is not cut; it is a placeholder.
+ * The glass shows the visitor's sky (WindowSky.ts).
  */
 function windowOnBackWall(cx: number): THREE.Mesh[] {
   const { width, sill, height, frame, depth } = WINDOW;
@@ -158,7 +164,7 @@ function windowOnBackWall(cx: number): THREE.Mesh[] {
   const y1 = sill + height;
   const ym = sill + height / 2;
   return [
-    box([x0, sill, z0], [x1, y1, z0 + 0.02], COLORS.glass),
+    glass(box([x0, sill, z0], [x1, y1, z0 + 0.02])),
     box([x0 - frame, sill - frame, z0], [x1 + frame, sill, z0 + depth], COLORS.windowFrame), // sill
     box([x0 - frame, y1, z0], [x1 + frame, y1 + frame, z0 + depth], COLORS.windowFrame), // head
     box([x0 - frame, sill, z0], [x0, y1, z0 + depth], COLORS.windowFrame), // jambs
