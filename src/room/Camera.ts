@@ -4,15 +4,16 @@ import type Sizes from './utils/Sizes';
 /**
  * Home view (analysis section 4.4, changed for the wider three-wall room):
  * straight on from the open front (theta 0), 18 degrees above level
- * (phi 0.4 pi), framed on the room and the corridor in front of it: at 16:9
- * the corridor railing sits about three quarters of the way down to the bottom
- * edge, the room's front corners near the sides, and the wall tops are cropped.
+ * (phi 0.4 pi), framed on the room alone: at 16:9 the corridor and the
+ * building below are just off the bottom edge and the wall tops are cropped.
+ * Zooming out to the limit (Navigation, radius 28) shows a strip of the
+ * corridor rug, still not the railing or the building's body.
  */
 export const HOME_VIEW = {
-  radius: 26,
+  radius: 24.2,
   phi: 0.4 * Math.PI,
   theta: 0,
-  target: new THREE.Vector3(0, 2.6, 3),
+  target: new THREE.Vector3(0, 3, 0),
 } as const;
 
 const NEAR = 0.1;

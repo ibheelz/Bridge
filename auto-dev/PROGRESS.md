@@ -180,5 +180,7 @@ Build the room procedurally in code behind the same interfaces the GLB loader wi
 
 - Corridor rug (user request, 2026-11-13): a dark blue rug (`#1f3a6b`) covers this floor's whole corridor, end to end and from the rooms' fronts to just short of the railing posts.
 
+- Home view restored (user request, 2026-11-13): back to radius 24.2 looking at (0, 3, 0), zoom-out limit 28. At 16:9 the corridor, railing and building body are off-screen on load; at the zoom-out limit a strip of the corridor rug shows at the bottom (railing and building still hidden). On narrower screens (taller vertical view) more of the corridor and building shows. Checked numerically only.
+
 ## Next step
 Nothing left that can be done without the user. Next is the browser check (checklist in `auto-dev/HANDOFF.md`, section 8), then the blocked items at the top of this file.
