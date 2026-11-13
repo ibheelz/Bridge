@@ -176,5 +176,7 @@ Build the room procedurally in code behind the same interfaces the GLB loader wi
 
 - Settings and sound buttons removed (user request, 2026-11-13): markup, CSS, `src/ui/overlay.ts`, `src/room/utils/mutePref.ts` and the `kai:intro-open` event are gone. With no mute control, the audio always starts unmuted on the first gesture (any old `bridge:muted` value in a visitor's storage is ignored); `RoomAudio` still listens for `kai:mute` if a control comes back. `is-night` is still set on `<html>` but nothing uses it now.
 
+- Building colours (user request, 2026-11-13): white body and railings/parapets, light blue seams, corridor floors and neighbours' doors (`COLORS` in `PlaceholderRoom.ts`). The room's interior is unchanged.
+
 ## Next step
 Nothing left that can be done without the user. Next is the browser check (checklist in `auto-dev/HANDOFF.md`, section 8), then the blocked items at the top of this file.
