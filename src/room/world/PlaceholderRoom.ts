@@ -28,8 +28,6 @@ const SOFA_SEAT = 1.3;
 /** Desks: how far from the side wall the chair stands, and its z. */
 const CHAIR_IN = 3.25;
 const CHAIR_Z = -0.05;
-const MUG: V3 = [-5.07, DESK_TOP, -1.37]; // centre of the mug's base, on the left desk
-const MUG_HEIGHT = 0.26;
 const SHOW_WHITEBOARD = false;
 /**
  * The building: this room is one unit in a row of identical ones (a hotel
@@ -70,8 +68,6 @@ const COLORS = {
   deskTop: '#8a5a3b',
   drawers: '#a87b55',
   keyboard: '#2c2f34',
-  pot: '#c4643f',
-  plant: '#5a9152',
   chairBase: '#2a2a2c',
   chairSeat: '#3f5f8f',
   monitor: '#17181b',
@@ -89,7 +85,6 @@ const COLORS = {
   cableBlue: '#3d7bd9',
   cableYellow: '#e0b43a',
   channel: '#e9eaec',
-  mug: '#f6f3ec',
   rug: '#9fb0c8',
   console: '#6a4a33',
   tv: '#1c1e22',
@@ -311,7 +306,7 @@ function sideX(side: Side, x: number): number {
 }
 
 /**
- * One desk against a side wall: top, drawers, tower, keyboard, plant, the
+ * One desk against a side wall: top, drawers, keyboard, the
  * fixed chair base, the CRT, and the chair seat. Coordinates are for the left
  * wall; the right desk is the mirror image.
  */
@@ -323,8 +318,6 @@ function desk(side: Side, F: number) {
     sideBox(side, [W, F, -2.0], [W + 2.2, DESK_TOP - 0.15, -1.0], COLORS.drawers), // drawers, far end
     sideBox(side, [W, F, 3.3], [W + 2.2, DESK_TOP - 0.15, 4.3], COLORS.drawers), // drawers, near end
     sideBox(side, [W + 1.75, DESK_TOP, -0.55], [W + 2.15, DESK_TOP + 0.05, 0.6], COLORS.keyboard), // keyboard
-    cylinder([sideX(side, W + 0.8), DESK_TOP, 3.75], 0.22, 0.35, COLORS.pot), // plant pot
-    cylinder([sideX(side, W + 0.8), DESK_TOP + 0.35, 3.75], 0.07, 0.7, COLORS.plant), // plant stem
     // Chair base: the part that does not swivel.
     cylinder([chairX, F, CHAIR_Z], 0.5, 0.08, COLORS.chairBase),
     cylinder([chairX, F + 0.08, CHAIR_Z], 0.08, 1.12 - F - 0.08, COLORS.chairBase),
@@ -582,13 +575,12 @@ export function createPlaceholderRoom(): RoomSource {
     ...building(F),
   ]);
 
-  // --- Desks along the side walls; the mug is on the left one only --------
+  // --- Desks along the side walls: design setup left, IT setup right ------
   const workStation = model('workStation', [-HALF_X + 1.15, F, 1.15], [
     ...left.workStation,
     ...right.workStation,
     ...design.workStation,
     ...it.workStation,
-    cylinder(MUG, 0.12, MUG_HEIGHT, COLORS.mug),
   ]);
   // `retro` keeps its model name (the GLB contract); it now holds both monitors.
   const retro = model('retro', [MONITOR_X, DESK_TOP, 0.025], [...design.monitor, ...it.monitor]);
@@ -690,16 +682,9 @@ export function createPlaceholderRoom(): RoomSource {
   // because the code expects every required screen; set this to true to bring it back.
   screens.screenWhiteboard.visible = SHOW_WHITEBOARD;
 
-  // --- Steam over the mug: 0.28 x 0.5, facing the open front (the camera) ---
-  const steamGeometry = new THREE.PlaneGeometry(0.28, 0.5, 16, 32);
-  steamGeometry.translate(0, 0.25, 0); // v = 0 sits on the mug rim
-  const steam = new THREE.Mesh(steamGeometry, blank);
-  steam.name = 'coffeeSteam';
-  steam.position.set(MUG[0], MUG[1] + MUG_HEIGHT, MUG[2]);
-  steam.rotation.y = 0;
+  // No mug, so no steam (user request); RoomSource.steam stays optional for real models.
 
   return {
-    steam,
     // No door leaf now; kept so a door can come back with the same hinge.
     doorOpenAngle: THREE.MathUtils.degToRad(-25),
     groundY: GROUND_LEVEL,
