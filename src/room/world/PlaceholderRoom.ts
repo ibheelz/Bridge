@@ -20,6 +20,8 @@ const WALL_THICKNESS = 0.25;
 const DESK_TOP = 2.3;
 const TABLE_TOP = 1.17;
 const SOFA_SEAT = 1.3;
+const MUG: V3 = [-2.77, DESK_TOP, -1.37]; // centre of the mug's base, on the desk
+const MUG_HEIGHT = 0.26;
 
 /** World replaces this with clay (or a baked material) before anything renders. */
 const blank = new THREE.MeshBasicMaterial({ color: '#cccccc' });
@@ -108,7 +110,7 @@ export function createPlaceholderRoom(): RoomSource {
     box([-HALF, F, 3.3], [-2.5, DESK_TOP - 0.15, 4.3]), // drawers, near end
     box([-4.3, DESK_TOP, 2.5], [-3.0, DESK_TOP + 1.25, 3.1]), // tower
     box([-2.95, DESK_TOP, -0.55], [-2.55, DESK_TOP + 0.05, 0.6]), // keyboard
-    cylinder([-2.77, DESK_TOP, -1.37], 0.12, 0.26), // mug
+    cylinder(MUG, 0.12, MUG_HEIGHT), // mug
     cylinder([-3.9, DESK_TOP, 3.75], 0.22, 0.35), // plant pot
     cylinder([-3.9, DESK_TOP + 0.35, 3.75], 0.07, 0.7), // plant stem
     // Chair base: the part that does not swivel.
@@ -216,7 +218,16 @@ export function createPlaceholderRoom(): RoomSource {
     ),
   };
 
+  // --- Steam over the mug: 0.28 x 0.5, turned toward the open corner -------
+  const steamGeometry = new THREE.PlaneGeometry(0.28, 0.5, 16, 32);
+  steamGeometry.translate(0, 0.25, 0); // v = 0 sits on the mug rim
+  const steam = new THREE.Mesh(steamGeometry, blank);
+  steam.name = 'coffeeSteam';
+  steam.position.set(MUG[0], MUG[1] + MUG_HEIGHT, MUG[2]);
+  steam.rotation.y = Math.PI / 4;
+
   return {
+    steam,
     models: {
       roomModel,
       workStation,

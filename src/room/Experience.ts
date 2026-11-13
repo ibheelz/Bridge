@@ -75,7 +75,7 @@ export default class Experience {
   /** Real models when they all loaded, the placeholder room otherwise. */
   private buildWorld(group: ResourceGroup): void {
     const loaded = group.toLoad > 0 ? createLoadedRoom(this.resources.items) : null;
-    this.world = new World(this.scene, loaded ?? createPlaceholderRoom());
+    this.world = new World(this.scene, this.time, loaded ?? createPlaceholderRoom());
   }
 
   private resize(): void {

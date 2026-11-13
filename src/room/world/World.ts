@@ -1,5 +1,16 @@
 import * as THREE from 'three';
-import { MODEL_NAMES, SCREEN_NAMES, type ModelName, type RoomSource, type ScreenName } from '../assets';
+import {
+  MODEL_NAMES,
+  ROOMBA_PATH_FILE,
+  SCREEN_NAMES,
+  type ModelName,
+  type RoomSource,
+  type ScreenName,
+} from '../assets';
+import type Time from '../utils/Time';
+import ChairTop from './ChairTop';
+import CoffeeSteam from './CoffeeSteam';
+import Roomba from './Roomba';
 
 /**
  * Puts a RoomSource into the scene (analysis section 4.6).
@@ -7,18 +18,24 @@ import { MODEL_NAMES, SCREEN_NAMES, type ModelName, type RoomSource, type Screen
  * A model with a baked texture gets an unlit material showing that texture.
  * A model without one gets the clay material, and the two fallback lights are
  * added as soon as one model needs them (lights do not affect the baked ones).
- * The animated objects, screens and interactions hang off this class later.
+ * The animated objects (section 5) are created here and ticked from `update()`;
+ * screens and interactions hang off this class later.
  */
 export default class World {
   models: Record<ModelName, THREE.Group>;
   screens: Record<ScreenName, THREE.Mesh>;
+  chairTop: ChairTop;
+  roomba: Roomba;
+  coffeeSteam: CoffeeSteam | null = null;
 
   private scene: THREE.Scene;
+  private time: Time;
   private root = new THREE.Group();
   private clay: THREE.MeshStandardMaterial | null = null;
 
-  constructor(scene: THREE.Scene, source: RoomSource) {
+  constructor(scene: THREE.Scene, time: Time, source: RoomSource) {
     this.scene = scene;
+    this.time = time;
     this.models = source.models;
     this.screens = source.screens;
     this.root.name = 'world';
@@ -41,6 +58,14 @@ export default class World {
 
     for (const name of SCREEN_NAMES) this.root.add(source.screens[name]);
 
+    this.chairTop = new ChairTop(this.models.chairTop);
+    const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+    this.roomba = new Roomba(this.models.roomba, base + ROOMBA_PATH_FILE);
+    if (source.steam) {
+      this.coffeeSteam = new CoffeeSteam(source.steam);
+      this.root.add(source.steam);
+    }
+
     scene.add(this.root);
   }
 
@@ -57,10 +82,13 @@ export default class World {
   }
 
   update(): void {
-    // Chair, roomba, steam and screens tick here from step 4 on.
+    this.chairTop.update(this.time.elapsed);
+    this.roomba.update(this.time.delta);
+    this.coffeeSteam?.update(this.time.elapsed);
   }
 
   destroy(): void {
+    this.roomba.destroy();
     this.scene.remove(this.root);
     const materials = new Set<THREE.Material>();
     this.root.traverse((child) => {

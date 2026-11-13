@@ -51,7 +51,22 @@ export function createLoadedRoom(items: Record<string, LoadedFile>): RoomSource 
     textures[name] = texture;
   }
 
-  return { models: scenes, screens, textures };
+  return { models: scenes, screens, textures, steam: findSteam(items.coffeeSteam) };
+}
+
+/** First mesh of the optional `coffeeSteam.glb`, moved out of its file keeping its world transform. */
+function findSteam(file: LoadedFile | undefined): THREE.Mesh | undefined {
+  if (!file || file instanceof THREE.Texture) return undefined;
+  file.scene.updateMatrixWorld(true);
+  let found: THREE.Mesh | undefined;
+  file.scene.traverse((child) => {
+    if (!found && child instanceof THREE.Mesh) found = child;
+  });
+  if (!found) return undefined;
+  const mesh: THREE.Mesh = found;
+  mesh.removeFromParent();
+  mesh.matrixWorld.decompose(mesh.position, mesh.quaternion, mesh.scale);
+  return mesh;
 }
 
 function missing(what: string): null {

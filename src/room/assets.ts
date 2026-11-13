@@ -20,6 +20,9 @@ export type ModelName = (typeof MODEL_NAMES)[number];
 export const SCREEN_NAMES = ['screenCRT', 'screenTV', 'screenMacbook', 'screenWhiteboard'] as const;
 export type ScreenName = (typeof SCREEN_NAMES)[number];
 
+/** Waypoints for the roomba, fetched at runtime (shape in analysis section 3.3). */
+export const ROOMBA_PATH_FILE = 'assets/roomba-path.json';
+
 /**
  * What World needs to build the room, whoever supplies it.
  *
@@ -36,6 +39,11 @@ export interface RoomSource {
   models: Record<ModelName, THREE.Group>;
   screens: Record<ScreenName, THREE.Mesh>;
   textures: Partial<Record<ModelName, THREE.Texture>>;
+  /**
+   * Optional steam ribbon over the mug: a subdivided plane in world space with
+   * 0-1 UVs, v = 0 at the mug. World gives it the steam shader.
+   */
+  steam?: THREE.Mesh;
 }
 
 /** One file for the loader. `name` is the key it ends up under in `resources.items`. */
