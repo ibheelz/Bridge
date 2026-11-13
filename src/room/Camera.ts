@@ -4,13 +4,15 @@ import type Sizes from './utils/Sizes';
 /**
  * Home view (analysis section 4.4, changed for the wider three-wall room):
  * straight on from the open front (theta 0), 18 degrees above level
- * (phi 0.4 pi), close enough that the room's outer edges touch the sides of the view.
+ * (phi 0.4 pi), close enough that the room's outer edges touch the sides of
+ * the view. On screens wider than about 3:2 the tops of the 8-unit walls run
+ * off the top edge; the floor stays in view.
  */
 export const HOME_VIEW = {
-  radius: 28.7,
+  radius: 29.2,
   phi: 0.4 * Math.PI,
   theta: 0,
-  target: new THREE.Vector3(0, 2.6, 0),
+  target: new THREE.Vector3(0, 3, 0),
 } as const;
 
 const NEAR = 0.1;

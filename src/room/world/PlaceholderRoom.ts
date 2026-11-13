@@ -5,8 +5,9 @@ import type { ModelName, RoomScreens, RoomSource, ScreenName } from '../assets';
  * A box-and-cylinder stand-in for the real room, built in code.
  *
  * It returns the same RoomSource shape as `createLoadedRoom()` (LoadedRoom.ts), so
- * swapping in real models is a data change. Floor at y = 0.32, about 5.7 tall
- * (analysis section 3.1), but wider than the reference: 14 x 9.4 with walls on
+ * swapping in real models is a data change. Floor at y = 0.32 (analysis
+ * section 3.1). Wider and taller than the reference: 14 x 9.4, walls 8 tall
+ * (room for a chandelier; the reference is 5.7), with walls on
  * the left (-x), back (-z) and right (+x), seen straight on from the open +z
  * side. The left desk and computer are mirrored on the right wall; the TV sits
  * in the middle of the back wall with the sofa, table and laptop in front of
@@ -18,7 +19,7 @@ type V3 = readonly [number, number, number];
 export const FLOOR_Y = 0.32;
 const HALF_X = 7; // half the width (left to right)
 const HALF_Z = 4.7; // half the depth (back to front)
-const WALL_TOP = FLOOR_Y + 5.7;
+const WALL_TOP = FLOOR_Y + 8;
 const WALL_THICKNESS = 0.25;
 const DESK_TOP = 2.3;
 const TABLE_TOP = 1.17;

@@ -152,5 +152,7 @@ Build the room procedurally in code behind the same interfaces the GLB loader wi
 
 - Edge-to-edge home view (user request, 2026-11-13): radius 28.7 (was 32) so the room's outer wall edges touch the left and right of a 16:9 view; `fovForAspect` keeps at least 34.8 degrees across so narrower screens fill edge to edge too (vertical fov 20 at 16:9, 22 at 16:10, 26 at 4:3, 35 square, 49 iPad portrait, 68 on a 390x844 phone; cap 70). Screens wider than 16:9 keep a little side margin. Zoom-out stops at radius 32. Checked numerically only.
 
+- Taller walls (user request, 2026-11-13, for a chandelier the user will add): walls are 8 units tall (top at y 8.32, was 5.7 / 6.02). To keep the room edge to edge across the width, the home view is radius 29.2 looking at (0, 3, 0); zoom-out stops at 32.5. Trade-off: at 16:9 the wall tops run about 16% past the top of the screen (the floor stays in view); at 16:10 about 4%; from 4:3 down to phones the whole room fits. Screens wider than 16:9 show side margins. No ceiling was added. Checked numerically only.
+
 ## Next step
 Nothing left that can be done without the user. Next is the browser check (checklist in `auto-dev/HANDOFF.md`, section 8), then the blocked items at the top of this file.
