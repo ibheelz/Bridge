@@ -178,7 +178,7 @@ Build the room procedurally in code behind the same interfaces the GLB loader wi
 
 - Building colours (user request, 2026-11-13): white body and railings/parapets, light blue seams, corridor floors and neighbours' doors (`COLORS` in `PlaceholderRoom.ts`). The room's interior is unchanged.
 
-- Corridor runner (user request, 2026-11-13): a dark blue rug (`#1f3a6b`) runs the length of this floor's corridor, 0.6 in from the room side and 0.7 in from the railing.
+- Corridor rug (user request, 2026-11-13): a dark blue rug (`#1f3a6b`) covers this floor's whole corridor, end to end and from the rooms' fronts to just short of the railing posts.
 
 ## Next step
 Nothing left that can be done without the user. Next is the browser check (checklist in `auto-dev/HANDOFF.md`, section 8), then the blocked items at the top of this file.

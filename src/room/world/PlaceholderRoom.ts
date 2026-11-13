@@ -257,10 +257,8 @@ function building(F: number): THREE.Mesh[] {
   // Corridor floor along the whole row, level with the room's floor.
   const edge = front + CORRIDOR.depth;
   meshes.push(box([-BUILDING_HALF_X, F - 0.25, front], [BUILDING_HALF_X, F, edge], COLORS.corridor));
-  // Dark blue runner rug down the corridor, clear of the walls and the railing.
-  meshes.push(
-    box([-BUILDING_HALF_X + 0.5, F, front + 0.6], [BUILDING_HALF_X - 0.5, F + 0.03, edge - 0.7], COLORS.runner),
-  );
+  // Dark blue rug over the whole corridor: end to end, from the rooms to the railing.
+  meshes.push(box([-BUILDING_HALF_X, F, front], [BUILDING_HALF_X, F + 0.03, edge - 0.15], COLORS.runner));
   // Railing: posts and a hand rail at the corridor's open edge.
   const railZ = edge - 0.1;
   const top = F + CORRIDOR.railHeight;
