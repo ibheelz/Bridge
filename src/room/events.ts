@@ -12,7 +12,15 @@ export const EVENTS = {
   crtMode: 'kai:crtmode',
   crtScreenOn: 'kai:crt-screen-on',
   powerdownArrive: 'kai:powerdown-arrive',
+  tvMode: 'kai:tvmode',
+  suite: 'kai:suite',
+  suiteClose: 'kai:suite-close',
 } as const;
+
+/** Detail of `kai:tvmode` and `kai:suite`. */
+export interface ActiveDetail {
+  active: boolean;
+}
 
 export interface HoverDetail {
   id: 'computer';

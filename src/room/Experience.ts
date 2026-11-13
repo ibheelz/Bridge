@@ -9,6 +9,8 @@ import type { ResourceGroup } from './utils/Resources';
 import World from './world/World';
 import Interactions from './world/Interactions';
 import CRTMode from './modes/CRTMode';
+import SuiteMode from './modes/SuiteMode';
+import TVMode from './modes/TVMode';
 import { createBaseGroup } from './assets';
 import { createLoadedRoom } from './world/LoadedRoom';
 import { createPlaceholderRoom } from './world/PlaceholderRoom';
@@ -53,6 +55,9 @@ export default class Experience {
   interactions: Interactions | null = null;
   /** The computer's boot-and-leave sequence, and the arrival back; exists once `world` does. */
   crtMode: CRTMode | null = null;
+  /** The laptop close-up with its HTML panel, and the TV view; exist once `world` does. */
+  suiteMode: SuiteMode | null = null;
+  tvMode: TVMode | null = null;
 
   private tvVideo?: string;
   private portfolioUrl!: string;
@@ -95,16 +100,26 @@ export default class Experience {
       tvVideo: this.tvVideo,
     });
     this.interactions = new Interactions(this.camera, this.navigation, this.targetElement, this.world);
-    this.crtMode = new CRTMode({
+    const shared = {
       camera: this.camera,
       navigation: this.navigation,
       sizes: this.sizes,
       time: this.time,
-      world: this.world,
       interactions: this.interactions,
       element: this.targetElement,
-      destination: this.portfolioUrl,
-    });
+      canStart: () => !this.modeActive,
+    };
+    this.crtMode = new CRTMode({ ...shared, world: this.world, destination: this.portfolioUrl });
+    this.suiteMode = new SuiteMode(shared, this.world.screens.screenMacbook);
+    this.tvMode = new TVMode(
+      { ...shared, renderer: this.renderer, scene: this.scene },
+      this.world.screens.screenTV,
+    );
+  }
+
+  /** True while any cinematic mode has the camera; only one runs at a time. */
+  get modeActive(): boolean {
+    return Boolean(this.crtMode?.active || this.suiteMode?.active || this.tvMode?.active);
   }
 
   private resize(): void {
@@ -116,6 +131,8 @@ export default class Experience {
   private update(): void {
     this.camera.update();
     this.crtMode?.update();
+    this.suiteMode?.update();
+    this.tvMode?.update();
     this.renderer.render();
     this.world?.update();
     this.navigation.update();
@@ -128,6 +145,10 @@ export default class Experience {
     this.navigation.destroy();
     this.crtMode?.destroy();
     this.crtMode = null;
+    this.suiteMode?.destroy();
+    this.suiteMode = null;
+    this.tvMode?.destroy();
+    this.tvMode = null;
     this.interactions?.destroy();
     this.interactions = null;
     this.world?.destroy();

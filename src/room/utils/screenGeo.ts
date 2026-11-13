@@ -21,6 +21,16 @@ export function fovToFrame(width: number, distance: number, aspect: number): num
   return THREE.MathUtils.clamp(THREE.MathUtils.radToDeg(fov), 16, 72);
 }
 
+/**
+ * A mode's fixed field of view is meant for landscape. On portrait it is
+ * widened so the view stays as wide as it would be on a square screen (72 at most).
+ */
+export function widenForPortrait(fov: number, aspect: number): number {
+  if (aspect >= 1) return fov;
+  const half = Math.atan(Math.tan(THREE.MathUtils.degToRad(fov / 2)) / Math.max(aspect, 0.01));
+  return Math.min(72, THREE.MathUtils.radToDeg(half * 2));
+}
+
 const UP = new THREE.Vector3(0, 1, 0);
 
 /**

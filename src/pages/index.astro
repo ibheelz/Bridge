@@ -115,6 +115,91 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
         opacity: 1;
         transition: none;
       }
+      /* Laptop panel (suite mode). Darker than the spec's #0a0a0a61 so the pale text reads over a pale room. */
+      .suite {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        z-index: 20;
+        width: min(430px, calc(100% - 32px));
+        max-height: calc(100% - 32px);
+        overflow: auto;
+        transform: translate(-50%, -50%);
+        padding: 30px 32px 24px;
+        border: 1px solid hsla(40, 26%, 93%, 0.14);
+        border-radius: 12px;
+        background: #0a0a0ab8;
+        -webkit-backdrop-filter: blur(16px) saturate(120%);
+        backdrop-filter: blur(16px) saturate(120%);
+        box-shadow: inset 0 1px #f2efe912;
+        color: #f2efe9;
+        font: 14px/1.4 ui-sans-serif, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.4s ease, visibility 0s linear 0.4s;
+      }
+      .suite.is-open {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transition: opacity 0.4s ease;
+      }
+      .suite__close {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        width: 32px;
+        height: 32px;
+        border: 0;
+        border-radius: 6px;
+        background: none;
+        color: inherit;
+        font-size: 20px;
+        line-height: 1;
+        opacity: 0.6;
+        cursor: pointer;
+      }
+      .suite__close:hover,
+      .suite__close:focus-visible { opacity: 1; }
+      .suite__kicker {
+        font-size: 10px;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        opacity: 0.6;
+      }
+      .suite__title {
+        margin: 8px 0 14px;
+        font-size: 20px;
+        font-weight: 500;
+      }
+      .suite__rows { list-style: none; }
+      .suite__row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 2px 16px;
+        align-items: baseline;
+        padding: 12px 0;
+        border-top: 1px solid hsla(40, 26%, 93%, 0.14);
+      }
+      .suite__name { font-weight: 500; }
+      .suite__status {
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        opacity: 0.6;
+      }
+      .suite__blurb {
+        grid-column: 1 / -1;
+        font-size: 12px;
+        opacity: 0.6;
+      }
+      .suite__footer {
+        padding-top: 14px;
+        border-top: 1px solid hsla(40, 26%, 93%, 0.14);
+        font-size: 11px;
+        opacity: 0.4;
+      }
       .loading__percent {
         font: 12px/1 ui-sans-serif, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
         letter-spacing: 0.12em;
@@ -147,11 +232,36 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
         </div>
       </div>
     </main>
+    <aside class="suite" role="dialog" aria-label="Laptop" aria-hidden="true" inert>
+      <button class="suite__close" type="button" aria-label="Close">&times;</button>
+      <p class="suite__kicker">Placeholder kicker</p>
+      <h2 class="suite__title">Placeholder title</h2>
+      <ul class="suite__rows">
+        <li class="suite__row">
+          <span class="suite__name">Placeholder item one</span>
+          <span class="suite__status">Status</span>
+          <span class="suite__blurb">Placeholder blurb for the first item.</span>
+        </li>
+        <li class="suite__row">
+          <span class="suite__name">Placeholder item two</span>
+          <span class="suite__status">Status</span>
+          <span class="suite__blurb">Placeholder blurb for the second item.</span>
+        </li>
+        <li class="suite__row">
+          <span class="suite__name">Placeholder item three</span>
+          <span class="suite__status">Status</span>
+          <span class="suite__blurb">Placeholder blurb for the third item.</span>
+        </li>
+      </ul>
+      <p class="suite__footer">Placeholder footer line</p>
+    </aside>
     <div class="blackout" aria-hidden="true"></div>
     <script>
       import Experience from '../room/Experience';
       import { initLoading } from '../ui/loading';
+      import { initSuite } from '../ui/suite';
 
+      initSuite(document.querySelector<HTMLElement>('.suite'));
       const target = document.getElementById('room');
       if (target) {
         const experience = new Experience({

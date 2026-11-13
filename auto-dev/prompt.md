@@ -1,6 +1,6 @@
 You are continuing unattended development of the Bridge project (a 3D-room portfolio). Nobody is watching this run, so never ask questions; make the sensible choice and record it.
 
-1. Read `auto-dev/PROGRESS.md` first. It says what is done and what is next.
+1. Read `auto-dev/HANDOFF.md` (detailed instructions for every remaining step) and `auto-dev/PROGRESS.md` (what is done and what is next) first.
 2. Read only the sections of `KAI-HOUSE-ANALYSIS.md` you need for the next step (section 13 is the build plan; sections 4-11 hold the exact constants).
 3. Do the next unfinished step from PROGRESS.md. Work in small pieces: one phase or one clearly bounded part of a phase per run.
 4. Verify with `npm run build`. Fix what you broke before stopping.

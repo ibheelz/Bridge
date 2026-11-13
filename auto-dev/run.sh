@@ -26,6 +26,7 @@ trap 'rmdir "$LOCK" 2>/dev/null' EXIT
 echo "=== $(date '+%Y-%m-%d %H:%M:%S') run start" >> "$LOG"
 
 claude -p "$(cat "$DIR/prompt.md")" \
+  --model opus \
   --permission-mode acceptEdits \
   --allowedTools "Read" "Edit" "Write" "Glob" "Grep" \
     "Bash(npm install:*)" "Bash(npm run build:*)" "Bash(npx astro check:*)" \

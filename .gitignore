@@ -12,3 +12,4 @@ auto-dev/.lock
 # third-party reference captures (not ours to redistribute)
 kai-house-reference/
 auto-dev/devserver.log
+auto-dev/STOP

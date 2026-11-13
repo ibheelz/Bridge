@@ -43,6 +43,8 @@ export interface CRTModeOptions {
   element: HTMLElement;
   /** Where the computer leads. */
   destination: string;
+  /** False while another mode has the camera. */
+  canStart?: () => boolean;
 }
 
 const easeInOutCubic = (t: number): number => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -68,6 +70,7 @@ export default class CRTMode {
   private interactions: Interactions;
   private element: HTMLElement;
   private destination: string;
+  private canStart: () => boolean;
 
   /** Time spent in the current phase, and since the mode left `idle`. */
   private phaseTime = 0;
@@ -102,6 +105,7 @@ export default class CRTMode {
     this.interactions = options.interactions;
     this.element = options.element;
     this.destination = options.destination;
+    this.canStart = options.canStart ?? (() => true);
     this.overlay = document.querySelector<HTMLElement>('.blackout');
 
     const geo = getScreenGeo(this.world.screens.screenCRT, HOME_VIEW.target);
@@ -133,7 +137,7 @@ export default class CRTMode {
 
   /** Start the boot. Ignored unless the room is idle. */
   start(): void {
-    if (this.phase !== 'idle') return;
+    if (this.phase !== 'idle' || !this.canStart()) return;
     this.takeOver();
     this.modeTime = 0;
     this.captureFrom();
@@ -175,6 +179,7 @@ export default class CRTMode {
   /** Play the arrival from the portfolio. Also recovers a page restored while black. */
   arrive(): void {
     if (this.phase !== 'idle' && this.phase !== 'black') return;
+    if (this.phase === 'idle' && !this.canStart()) return;
     cancelAnimationFrame(this.leaveFrame);
     window.clearTimeout(this.screenOnTimer);
     this.takeOver();
