@@ -150,5 +150,7 @@ Build the room procedurally in code behind the same interfaces the GLB loader wi
 
 - Closer, lower home view (user request, 2026-11-13): straight on, 18 degrees above level (phi 0.4 pi, was 0.35 pi), radius 32 (was 46), looking at (0, 2.6, 0). Zoom-out stops at radius 36 (was 50). `fovForAspect` keeps at least 33 degrees across (20 vertical on screens wider than about 1.6:1, up to 70 on a portrait phone). Checked numerically only: the room spans about 87% of the width at 16:9 and about 92% at 1440x900, 1024x768, square, iPad portrait and a 390x844 phone, with nothing cut off. NOT checked in a browser; a 65-degree view on a phone may look stretched at the edges.
 
+- Edge-to-edge home view (user request, 2026-11-13): radius 28.7 (was 32) so the room's outer wall edges touch the left and right of a 16:9 view; `fovForAspect` keeps at least 34.8 degrees across so narrower screens fill edge to edge too (vertical fov 20 at 16:9, 22 at 16:10, 26 at 4:3, 35 square, 49 iPad portrait, 68 on a 390x844 phone; cap 70). Screens wider than 16:9 keep a little side margin. Zoom-out stops at radius 32. Checked numerically only.
+
 ## Next step
 Nothing left that can be done without the user. Next is the browser check (checklist in `auto-dev/HANDOFF.md`, section 8), then the blocked items at the top of this file.

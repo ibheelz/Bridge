@@ -4,10 +4,10 @@ import type Sizes from './utils/Sizes';
 /**
  * Home view (analysis section 4.4, changed for the wider three-wall room):
  * straight on from the open front (theta 0), 18 degrees above level
- * (phi 0.4 pi), close enough that the room fills most of the width.
+ * (phi 0.4 pi), close enough that the room's outer edges touch the sides of the view.
  */
 export const HOME_VIEW = {
-  radius: 32,
+  radius: 28.7,
   phi: 0.4 * Math.PI,
   theta: 0,
   target: new THREE.Vector3(0, 2.6, 0),
@@ -18,11 +18,11 @@ const FAR = 150;
 
 /**
  * 20 degrees vertically on wide screens. On narrower ones (below about 1.6:1)
- * it widens so the view always spans at least 33 degrees across, which keeps
- * the 14-unit room at about 90% of the width from the home distance. At most 70
- * (a portrait phone needs about 65).
+ * it widens so the view always spans at least 34.8 degrees across, which is
+ * exactly the 14-unit room's width from the home distance (edge to edge).
+ * At most 70 (a portrait phone needs about 68).
  */
-const MIN_HALF_WIDTH = THREE.MathUtils.degToRad(16.5);
+const MIN_HALF_WIDTH = THREE.MathUtils.degToRad(17.4);
 export function fovForAspect(aspect: number): number {
   const widened = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(MIN_HALF_WIDTH) / Math.max(aspect, 0.01)));
   return Math.min(70, Math.max(20, widened));
