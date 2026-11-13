@@ -29,7 +29,8 @@ export default class Screens {
   constructor(meshes: RoomScreens, options: ScreensOptions = {}) {
     this.meshes = meshes;
 
-    this.create('screenWhiteboard', () => new Whiteboard());
+    // A room can leave the whiteboard out by hiding its mesh (the placeholder does).
+    if (meshes.screenWhiteboard.visible) this.create('screenWhiteboard', () => new Whiteboard());
     this.create('screenMacbook', () => new MacScreen());
     this.create('screenTV', () =>
       options.tvVideo

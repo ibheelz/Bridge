@@ -41,6 +41,7 @@ export default class World {
   private time: Time;
   private root = new THREE.Group();
   private clay: THREE.MeshStandardMaterial | null = null;
+  private tinted = new Map<string, THREE.MeshStandardMaterial>();
   /** Colours of the materials `setDim` has darkened, to bring them back. */
   private dimmed = new Map<THREE.Material, THREE.Color>();
 
@@ -54,13 +55,13 @@ export default class World {
     for (const name of MODEL_NAMES) {
       const group = source.models[name];
       const texture = source.textures[name];
-      const material = texture
-        ? new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide })
-        : this.getClay();
+      const baked = texture ? new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide }) : null;
 
       group.traverse((child) => {
         if (!(child instanceof THREE.Mesh)) return;
-        child.material = material;
+        // Without a bake, a mesh may ask for a clay colour of its own (the placeholder does).
+        const tint = child.userData.clayColor as string | undefined;
+        child.material = baked ?? (tint ? this.getTinted(tint) : this.getClay());
         child.castShadow = false;
         child.receiveShadow = false;
       });
@@ -85,6 +86,18 @@ export default class World {
     this.door = new Door(this.models.door, this.screens.screenWhiteboard, source.doorOpenAngle);
 
     scene.add(this.root);
+  }
+
+  /** Clay in another colour, one material per colour; needs the same fallback lights. */
+  private getTinted(color: string): THREE.MeshStandardMaterial {
+    const clay = this.getClay();
+    let material = this.tinted.get(color);
+    if (!material) {
+      material = clay.clone();
+      material.color.set(color);
+      this.tinted.set(color, material);
+    }
+    return material;
   }
 
   /** Creates the clay material and the fallback lights the first time a model needs them. */
@@ -153,5 +166,7 @@ export default class World {
       (material as THREE.MeshBasicMaterial).map?.dispose();
       material.dispose();
     }
+    // The base clay may be unused when every mesh has its own colour.
+    this.clay?.dispose();
   }
 }
