@@ -128,19 +128,37 @@ export default class Navigation {
     }
   }
 
+  /** Horizontal distance from the target to the camera. */
+  private reach(): number {
+    const s = this.spherical.value;
+    return Math.max(0.001, s.radius * Math.sin(s.phi));
+  }
+
   /**
-   * Sideways turn allowed right now: the locked limits, widened only as far as
-   * the camera stays between the side walls for the current zoom and pan.
+   * Sideways turn allowed right now: the locked limits, widened when zoomed in
+   * as far as the camera can stay between the side walls with the look-at
+   * point slid to the far side (see `keepInside`). At the home distance this
+   * adds nothing.
    */
   private thetaLimits(): { min: number; max: number } {
+    const reach = this.reach();
+    const room = INSIDE_HALF_X - LIMITS.target.x.min; // camera at one wall, target panned fully to the other
+    const widest = room >= reach ? Math.PI / 2 : Math.asin(room / reach);
+    return { min: Math.min(LIMITS.theta.min, -widest), max: Math.max(LIMITS.theta.max, widest) };
+  }
+
+  /**
+   * Beyond the locked turn, slide the look-at point toward the desk being
+   * faced so the camera stays inside the room. Turning right past the limit
+   * therefore swings the view onto the left desk, and the other way round.
+   */
+  private keepInside(): void {
     const s = this.spherical.value;
-    const reach = Math.max(0.001, s.radius * Math.sin(s.phi)); // horizontal distance camera-target
-    const x = this.target.value.x;
-    const toAngle = (room: number): number => (room >= reach ? Math.PI / 2 : Math.asin(Math.max(0, room / reach)));
-    return {
-      min: Math.min(LIMITS.theta.min, -toAngle(INSIDE_HALF_X + x)),
-      max: Math.max(LIMITS.theta.max, toAngle(INSIDE_HALF_X - x)),
-    };
+    if (s.theta <= LIMITS.theta.max && s.theta >= LIMITS.theta.min) return;
+    const offset = this.reach() * Math.sin(s.theta); // camera x relative to the target
+    const t = this.target.value;
+    t.x = clamp(t.x, -INSIDE_HALF_X - offset, INSIDE_HALF_X - offset);
+    t.x = clamp(t.x, LIMITS.target.x.min, LIMITS.target.x.max);
   }
 
   update(): void {
@@ -149,6 +167,7 @@ export default class Navigation {
     // Zooming out (or panning) after turning sideways brings the turn back within what is allowed.
     const turn = this.thetaLimits();
     sv.theta = clamp(sv.theta, turn.min, turn.max);
+    this.keepInside();
     const ss = this.spherical.smoothed;
     ss.radius += (sv.radius - ss.radius) * t;
     ss.phi += (sv.phi - ss.phi) * t;
@@ -194,6 +213,7 @@ export default class Navigation {
     const s = this.spherical.value;
     const turn = this.thetaLimits();
     s.theta = clamp(s.theta - (dx / side) * ORBIT_SENSITIVITY, turn.min, turn.max);
+    this.keepInside();
     s.phi = clamp(s.phi - (dy / side) * ORBIT_SENSITIVITY, LIMITS.phi.min, LIMITS.phi.max);
   }
 
