@@ -156,5 +156,7 @@ Build the room procedurally in code behind the same interfaces the GLB loader wi
 
 - Posters removed (user request, 2026-11-13): the two posters on each side wall are gone; the pegboards on the back wall stay.
 
+- No wall edges on load (user request, 2026-11-13): home radius 24.2 (was 29.2), zoom-out stops at 28. The front ends of the side walls sit about 12% past the left and right of the view; the back corners are at about 83% of the half-width. `fovForAspect` now keeps the horizontal angle fixed at 34.8 degrees on every screen (vertical 20 at 16:9, about 15 on 21:9 ultrawide, up to 68 on a phone; cap 70), so the sides crop the same everywhere. Cropping at 16:9: wall tops about 37% past the top edge and the front strip of floor about 17% past the bottom; on 4:3 and narrower the full height fits. Checked numerically only.
+
 ## Next step
 Nothing left that can be done without the user. Next is the browser check (checklist in `auto-dev/HANDOFF.md`, section 8), then the blocked items at the top of this file.
