@@ -1,26 +1,32 @@
 import * as THREE from 'three';
-import type { ModelName, RoomSource, ScreenName } from '../assets';
+import type { ModelName, RoomScreens, RoomSource, ScreenName } from '../assets';
 
 /**
  * A box-and-cylinder stand-in for the real room, built in code.
  *
  * It returns the same RoomSource shape as `createLoadedRoom()` (LoadedRoom.ts), so
- * swapping in real models is a data change. Dimensions follow analysis
- * section 3.1: footprint about 9.4 x 9.4, about 5.7 tall, floor at y = 0.32,
- * walls on the -x and -z sides. All layout numbers below are original
- * guesses at that scale, not measurements of anyone's model.
+ * swapping in real models is a data change. Floor at y = 0.32, about 5.7 tall
+ * (analysis section 3.1), but wider than the reference: 14 x 9.4 with walls on
+ * the left (-x), back (-z) and right (+x), seen straight on from the open +z
+ * side. The left desk and computer are mirrored on the right wall; the TV sits
+ * in the middle of the back wall with the sofa, table and laptop in front of
+ * it. All layout numbers are original guesses, not measurements of anyone's model.
  */
 
 type V3 = readonly [number, number, number];
 
 export const FLOOR_Y = 0.32;
-const HALF = 4.7; // half the footprint
+const HALF_X = 7; // half the width (left to right)
+const HALF_Z = 4.7; // half the depth (back to front)
 const WALL_TOP = FLOOR_Y + 5.7;
 const WALL_THICKNESS = 0.25;
 const DESK_TOP = 2.3;
 const TABLE_TOP = 1.17;
 const SOFA_SEAT = 1.3;
-const MUG: V3 = [-2.77, DESK_TOP, -1.37]; // centre of the mug's base, on the desk
+/** Desks: how far from the side wall the chair stands, and its z. */
+const CHAIR_IN = 3.25;
+const CHAIR_Z = -0.05;
+const MUG: V3 = [-5.07, DESK_TOP, -1.37]; // centre of the mug's base, on the left desk
 const MUG_HEIGHT = 0.26;
 
 /** World replaces this with clay (or a baked material) before anything renders. */
@@ -91,71 +97,113 @@ function screen(
 
 const SCREEN_OFF = '#15161a';
 
+type Side = 'left' | 'right';
+
+/** Box given in left-desk coordinates, mirrored across x = 0 for the right desk. */
+function sideBox(side: Side, min: V3, max: V3): THREE.Mesh {
+  if (side === 'left') return box(min, max);
+  return box([-max[0], min[1], min[2]], [-min[0], max[1], max[2]]);
+}
+
+function sideX(side: Side, x: number): number {
+  return side === 'left' ? x : -x;
+}
+
+/**
+ * One desk against a side wall: top, drawers, tower, keyboard, plant, the
+ * fixed chair base, the CRT, and the chair seat. Coordinates are for the left
+ * wall; the right desk is the mirror image.
+ */
+function desk(side: Side, F: number) {
+  const W = -HALF_X; // the side wall, in left coordinates
+  const chairX = sideX(side, W + CHAIR_IN);
+  const workStation = [
+    sideBox(side, [W, DESK_TOP - 0.15, -2.0], [W + 2.3, DESK_TOP, 4.3]), // top
+    sideBox(side, [W, F, -2.0], [W + 2.2, DESK_TOP - 0.15, -1.0]), // drawers, far end
+    sideBox(side, [W, F, 3.3], [W + 2.2, DESK_TOP - 0.15, 4.3]), // drawers, near end
+    sideBox(side, [W + 0.4, DESK_TOP, 2.5], [W + 1.7, DESK_TOP + 1.25, 3.1]), // tower
+    sideBox(side, [W + 1.75, DESK_TOP, -0.55], [W + 2.15, DESK_TOP + 0.05, 0.6]), // keyboard
+    cylinder([sideX(side, W + 0.8), DESK_TOP, 3.75], 0.22, 0.35), // plant pot
+    cylinder([sideX(side, W + 0.8), DESK_TOP + 0.35, 3.75], 0.07, 0.7), // plant stem
+    // Chair base: the part that does not swivel.
+    cylinder([chairX, F, CHAIR_Z], 0.5, 0.08),
+    cylinder([chairX, F + 0.08, CHAIR_Z], 0.08, 1.12 - F - 0.08),
+  ];
+  const retro = [
+    sideBox(side, [W + 0.8, DESK_TOP, -0.45], [W + 1.6, DESK_TOP + 0.25, 0.5]), // foot
+    sideBox(side, [W + 0.45, DESK_TOP + 0.25, -0.78], [W + 1.74, DESK_TOP + 1.55, 0.83]), // body
+  ];
+  // Seat and back; the back is on the side away from the desk.
+  const seat = new THREE.Group();
+  seat.name = `chairTop_${side}`;
+  seat.position.set(chairX, 1.12, CHAIR_Z);
+  const seatMeshes = [
+    sideBox(side, [W + CHAIR_IN - 0.55, 1.12, CHAIR_Z - 0.55], [W + CHAIR_IN + 0.55, 1.3, CHAIR_Z + 0.55]),
+    sideBox(side, [W + CHAIR_IN + 0.43, 1.3, CHAIR_Z - 0.5], [W + CHAIR_IN + 0.55, 2.6, CHAIR_Z + 0.5]),
+  ];
+  for (const mesh of seatMeshes) {
+    mesh.position.sub(seat.position);
+    seat.add(mesh);
+  }
+  // Facing into the room: +x for the left desk, -x for the right.
+  const screenCenter: V3 = [sideX(side, W + 1.76), 3.145, 0.025];
+  const screenRotation: V3 = [0, side === 'left' ? Math.PI / 2 : -Math.PI / 2, 0];
+  const decor = [
+    sideBox(side, [W + 0.4, 2.8, -HALF_Z], [W + 2.2, 4.4, -HALF_Z + 0.06]), // pegboard, back wall
+    sideBox(side, [W, 4.2, 1.6], [W + 0.04, 5.3, 3.1]), // poster, side wall
+    sideBox(side, [W, 4.4, -1.6], [W + 0.04, 5.2, -0.6]), // poster, side wall
+  ];
+  return { workStation, retro, seat, screenCenter, screenRotation, decor };
+}
+
 export function createPlaceholderRoom(): RoomSource {
   const F = FLOOR_Y;
+  const left = desk('left', F);
+  const right = desk('right', F);
 
-  // --- Shell: floor slab and the two walls -------------------------------
+  // --- Shell: floor slab and the three walls -------------------------------
   const roomModel = model('roomModel', [0, F, 0], [
-    box([-HALF - WALL_THICKNESS, F - 0.25, -HALF - WALL_THICKNESS], [HALF, F, HALF]),
-    box([-HALF - WALL_THICKNESS, F, -HALF - WALL_THICKNESS], [-HALF, WALL_TOP, HALF]),
-    box([-HALF, F, -HALF - WALL_THICKNESS], [HALF, WALL_TOP, -HALF]),
+    box([-HALF_X - WALL_THICKNESS, F - 0.25, -HALF_Z - WALL_THICKNESS], [HALF_X + WALL_THICKNESS, F, HALF_Z]),
+    box([-HALF_X - WALL_THICKNESS, F, -HALF_Z - WALL_THICKNESS], [-HALF_X, WALL_TOP, HALF_Z]), // left
+    box([-HALF_X, F, -HALF_Z - WALL_THICKNESS], [HALF_X, WALL_TOP, -HALF_Z]), // back
+    box([HALF_X, F, -HALF_Z - WALL_THICKNESS], [HALF_X + WALL_THICKNESS, WALL_TOP, HALF_Z]), // right
   ]);
 
-  // --- Desk along the -x wall --------------------------------------------
-  const chairX = -1.45;
-  const chairZ = -0.05;
-  const workStation = model('workStation', [-3.55, F, 1.15], [
-    box([-HALF, DESK_TOP - 0.15, -2.0], [-2.4, DESK_TOP, 4.3]), // top
-    box([-HALF, F, -2.0], [-2.5, DESK_TOP - 0.15, -1.0]), // drawers, far end
-    box([-HALF, F, 3.3], [-2.5, DESK_TOP - 0.15, 4.3]), // drawers, near end
-    box([-4.3, DESK_TOP, 2.5], [-3.0, DESK_TOP + 1.25, 3.1]), // tower
-    box([-2.95, DESK_TOP, -0.55], [-2.55, DESK_TOP + 0.05, 0.6]), // keyboard
-    cylinder(MUG, 0.12, MUG_HEIGHT), // mug
-    cylinder([-3.9, DESK_TOP, 3.75], 0.22, 0.35), // plant pot
-    cylinder([-3.9, DESK_TOP + 0.35, 3.75], 0.07, 0.7), // plant stem
-    // Chair base: the part that does not swivel.
-    cylinder([chairX, F, chairZ], 0.5, 0.08),
-    cylinder([chairX, F + 0.08, chairZ], 0.08, 1.12 - F - 0.08),
+  // --- Desks along the side walls; the mug is on the left one only --------
+  const workStation = model('workStation', [-HALF_X + 1.15, F, 1.15], [
+    ...left.workStation,
+    ...right.workStation,
+    cylinder(MUG, 0.12, MUG_HEIGHT),
+  ]);
+  const retro = model('retro', [-HALF_X + 1.25, DESK_TOP, 0.025], [...left.retro, ...right.retro]);
+
+  // --- Chair seats: one swivel node each (ChairTop turns every child) -----
+  const chairTop = new THREE.Group();
+  chairTop.name = 'chairTop';
+  chairTop.add(left.seat, right.seat);
+
+  // --- Living area: TV centred on the back wall, table, sofa facing it -----
+  const tv = { x0: -1.83, x1: 1.83, y0: 2.49, y1: 4.86 };
+  const livingRoom = model('livingRoom', [0, F, -0.8], [
+    box([-1.9, F, -2.4], [1.9, F + 0.03, 1.6]), // rug
+    box([-1.72, F, -HALF_Z], [1.72, 1.3, -3.9]), // console under the TV
+    box([tv.x0 - 0.1, tv.y0 - 0.1, -HALF_Z], [tv.x1 + 0.1, tv.y1 + 0.1, -4.56]), // TV body
+    box([-1.42, 1.3, -4.5], [-0.72, 1.38, -4.05]), // books on the console
+    box([-1.37, 1.38, -4.48], [-0.77, 1.46, -4.08]),
+    box([-1.25, TABLE_TOP - 0.1, -1.35], [1.25, TABLE_TOP, -0.15]), // table top
+    box([-1.15, F, -1.25], [-1.03, TABLE_TOP - 0.1, -0.25]), // table sides
+    box([1.03, F, -1.25], [1.15, TABLE_TOP - 0.1, -0.25]),
+    box([-1.55, F, 1.9], [1.55, SOFA_SEAT, 3.1]), // sofa seat
+    box([-1.55, F, 3.1], [1.55, SOFA_SEAT + 0.9, 3.45]), // sofa back
+    box([-1.8, F, 1.9], [-1.55, SOFA_SEAT + 0.4, 3.45]), // sofa arms
+    box([1.55, F, 1.9], [1.8, SOFA_SEAT + 0.4, 3.45]),
   ]);
 
-  // --- CRT on the desk ----------------------------------------------------
-  const retro = model('retro', [-3.45, DESK_TOP, 0.025], [
-    box([-3.9, DESK_TOP, -0.45], [-3.1, DESK_TOP + 0.25, 0.5]), // foot
-    box([-4.25, DESK_TOP + 0.25, -0.78], [-2.96, DESK_TOP + 1.55, 0.83]), // body
-  ]);
-
-  // --- Chair top, pivot on the swivel axis --------------------------------
-  const chairTop = model('chairTop', [chairX, 1.12, chairZ], [
-    box([chairX - 0.55, 1.12, chairZ - 0.55], [chairX + 0.55, 1.3, chairZ + 0.55]), // seat
-    box([chairX + 0.43, 1.3, chairZ - 0.5], [chairX + 0.55, 2.6, chairZ + 0.5]), // back
-  ]);
-
-  // --- Living area: TV on the -z wall, table, sofa facing it ---------------
-  const tv = { x0: 0.39, x1: 4.05, y0: 2.49, y1: 4.86 };
-  const livingRoom = model('livingRoom', [2.3, F, -0.8], [
-    box([0.4, F, -2.4], [4.2, F + 0.03, 1.6]), // rug
-    box([0.5, F, -HALF], [3.95, 1.3, -3.9]), // console under the TV
-    box([tv.x0 - 0.1, tv.y0 - 0.1, -HALF], [tv.x1 + 0.1, tv.y1 + 0.1, -4.56]), // TV body
-    box([0.8, 1.3, -4.5], [1.5, 1.38, -4.05]), // books on the console
-    box([0.85, 1.38, -4.48], [1.45, 1.46, -4.08]),
-    box([1.3, TABLE_TOP - 0.1, -1.35], [3.8, TABLE_TOP, -0.15]), // table top
-    box([1.4, F, -1.25], [1.52, TABLE_TOP - 0.1, -0.25]), // table sides
-    box([3.58, F, -1.25], [3.7, TABLE_TOP - 0.1, -0.25]),
-    box([0.8, F, 1.9], [3.9, SOFA_SEAT, 3.1]), // sofa seat
-    box([0.8, F, 3.1], [3.9, SOFA_SEAT + 0.9, 3.45]), // sofa back
-    box([0.55, F, 1.9], [0.8, SOFA_SEAT + 0.4, 3.45]), // sofa arms
-    box([3.9, F, 1.9], [4.15, SOFA_SEAT + 0.4, 3.45]),
-  ]);
-
-  // --- Wall decor ---------------------------------------------------------
-  const wallDecor = model('wallDecor', [-3.4, 3.6, -HALF], [
-    box([-4.3, 2.8, -HALF], [-2.5, 4.4, -HALF + 0.06]), // pegboard, -z wall
-    box([-HALF, 4.2, 1.6], [-HALF + 0.04, 5.3, 3.1]), // poster, -x wall
-    box([-HALF, 4.4, -1.6], [-HALF + 0.04, 5.2, -0.6]), // poster, -x wall
-  ]);
+  // --- Wall decor: pegboards and posters by each desk ----------------------
+  const wallDecor = model('wallDecor', [-HALF_X + 1.3, 3.6, -HALF_Z], [...left.decor, ...right.decor]);
 
   // --- Laptop on the table, screen facing the sofa (+z) -------------------
-  const mac = { x: 2.09, z: -0.75, width: 0.96, depth: 0.66, tilt: 0.28 };
+  const mac = { x: -0.13, z: -0.75, width: 0.96, depth: 0.66, tilt: 0.28 };
   const hinge = new THREE.Vector3(mac.x, TABLE_TOP + 0.04, mac.z - mac.depth / 2);
   const lidRotation: V3 = [-mac.tilt, 0, 0];
   const lidPoint = (up: number, out: number): V3 => {
@@ -173,8 +221,8 @@ export function createPlaceholderRoom(): RoomSource {
     lid,
   ]);
 
-  // --- Door on the -z wall, pivot on the hinge ----------------------------
-  const door = { hingeX: -2.11, width: 1.3, top: 3.9, z: -4.62, thickness: 0.08 };
+  // --- Door on the back wall, left of the TV, pivot on the hinge ----------
+  const door = { hingeX: -4.4, width: 1.3, top: 3.9, z: -4.62, thickness: 0.08 };
   const doorModel = model('door', [door.hingeX, F, door.z], [
     box(
       [door.hingeX, F, door.z - door.thickness / 2],
@@ -183,20 +231,21 @@ export function createPlaceholderRoom(): RoomSource {
   ]);
 
   // --- Small props --------------------------------------------------------
-  const roomba = model('roomba', [-1.81, F, 4.03], [cylinder([-1.81, F, 4.03], 0.45, 0.18)]);
-  const book = model('book', [3.3, TABLE_TOP, -0.56], [
-    box([3.05, TABLE_TOP, -0.74], [3.55, TABLE_TOP + 0.08, -0.38]),
+  const roomba = model('roomba', [-3, F, 4.1], [cylinder([-3, F, 4.1], 0.45, 0.18)]);
+  const book = model('book', [1.08, TABLE_TOP, -0.56], [
+    box([0.83, TABLE_TOP, -0.74], [1.33, TABLE_TOP + 0.08, -0.38]),
   ]);
-  const remote = model('remote', [3.25, SOFA_SEAT, 2.6], [
-    box([3.19, SOFA_SEAT, 2.4], [3.31, SOFA_SEAT + 0.05, 2.8]),
+  const remote = model('remote', [1.03, SOFA_SEAT, 2.6], [
+    box([0.97, SOFA_SEAT, 2.4], [1.09, SOFA_SEAT + 0.05, 2.8]),
   ]);
 
   // --- Screens (world space) ----------------------------------------------
   const doorFront = door.z + door.thickness / 2 + 0.01;
-  const screens: Record<ScreenName, THREE.Mesh> = {
-    // Faces +x. 1.21 x 0.91, about 4:3.
-    screenCRT: screen('screenCRT', 1.21, 0.91, [-2.94, 3.145, 0.025], [0, Math.PI / 2, 0], SCREEN_OFF),
-    // Faces +z, on the -z wall.
+  const screens: RoomScreens = {
+    // 1.21 x 0.91, about 4:3. Left faces +x, right faces -x.
+    screenCRT: screen('screenCRT', 1.21, 0.91, left.screenCenter, left.screenRotation, SCREEN_OFF),
+    screenCRT2: screen('screenCRT2', 1.21, 0.91, right.screenCenter, right.screenRotation, SCREEN_OFF),
+    // Faces +z, on the back wall.
     screenTV: screen(
       'screenTV',
       tv.x1 - tv.x0,
@@ -218,13 +267,13 @@ export function createPlaceholderRoom(): RoomSource {
     ),
   };
 
-  // --- Steam over the mug: 0.28 x 0.5, turned toward the open corner -------
+  // --- Steam over the mug: 0.28 x 0.5, facing the open front (the camera) ---
   const steamGeometry = new THREE.PlaneGeometry(0.28, 0.5, 16, 32);
   steamGeometry.translate(0, 0.25, 0); // v = 0 sits on the mug rim
   const steam = new THREE.Mesh(steamGeometry, blank);
   steam.name = 'coffeeSteam';
   steam.position.set(MUG[0], MUG[1] + MUG_HEIGHT, MUG[2]);
-  steam.rotation.y = Math.PI / 4;
+  steam.rotation.y = 0;
 
   return {
     steam,

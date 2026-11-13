@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { ScreenName } from '../assets';
+import type { RoomScreens, ScreenName } from '../assets';
 import type { ScreenContent } from './screens/CanvasScreen';
 import MacScreen from './screens/MacScreen';
 import TestPattern from './screens/TestPattern';
@@ -23,10 +23,10 @@ export interface ScreensOptions {
  * `CRTMode` runs its boot sequence (`set('screenCRT', …)`, then `clear`).
  */
 export default class Screens {
-  private meshes: Record<ScreenName, THREE.Mesh>;
+  private meshes: RoomScreens;
   private contents = new Map<ScreenName, ScreenContent>();
 
-  constructor(meshes: Record<ScreenName, THREE.Mesh>, options: ScreensOptions = {}) {
+  constructor(meshes: RoomScreens, options: ScreensOptions = {}) {
     this.meshes = meshes;
 
     this.create('screenWhiteboard', () => new Whiteboard());
@@ -56,10 +56,14 @@ export default class Screens {
 
   /** Show `content` on a screen, disposing what was there before. */
   set(name: ScreenName, content: ScreenContent): void {
+    const mesh = this.meshes[name];
+    if (!mesh) {
+      content.destroy(); // this room has no such screen
+      return;
+    }
     this.contents.get(name)?.destroy();
     this.contents.set(name, content);
 
-    const mesh = this.meshes[name];
     (mesh.material as THREE.Material).dispose();
     // Not tone mapped: a screen shows its canvas colours as drawn.
     mesh.material = new THREE.MeshBasicMaterial({ map: content.texture, toneMapped: false });
@@ -71,6 +75,7 @@ export default class Screens {
     this.contents.delete(name);
 
     const mesh = this.meshes[name];
+    if (!mesh) return;
     (mesh.material as THREE.Material).dispose();
     mesh.material = new THREE.MeshBasicMaterial({ color });
   }

@@ -12,7 +12,7 @@ import CRTMode from './modes/CRTMode';
 import SuiteMode from './modes/SuiteMode';
 import TVMode from './modes/TVMode';
 import RoomAudio from './Audio';
-import { createBaseGroup } from './assets';
+import { createBaseGroup, type ComputerId } from './assets';
 import { createLoadedRoom } from './world/LoadedRoom';
 import { createPlaceholderRoom } from './world/PlaceholderRoom';
 
@@ -54,8 +54,8 @@ export default class Experience {
   navigation!: Navigation;
   /** Hover and click on the room's objects; exists once `world` does. */
   interactions: Interactions | null = null;
-  /** The computer's boot-and-leave sequence, and the arrival back; exists once `world` does. */
-  crtMode: CRTMode | null = null;
+  /** Each computer's boot-and-leave sequence, and the arrival back; filled once `world` exists. */
+  crtModes: CRTMode[] = [];
   /** The laptop close-up with its HTML panel, and the TV view; exist once `world` does. */
   suiteMode: SuiteMode | null = null;
   tvMode: TVMode | null = null;
@@ -112,7 +112,15 @@ export default class Experience {
       element: this.targetElement,
       canStart: () => !this.modeActive,
     };
-    this.crtMode = new CRTMode({ ...shared, world: this.world, destination: this.portfolioUrl });
+    for (const computer of Object.keys(this.world.computers) as ComputerId[]) {
+      this.crtModes.push(
+        new CRTMode({ ...shared, world: this.world, computer, destination: this.portfolioUrl }),
+      );
+    }
+    // Arriving back for a computer this room does not have: use the first one.
+    if (window.location.hash === '#powerdown' && !this.crtModes.some((mode) => mode.active)) {
+      this.crtModes[0]?.arrive();
+    }
     this.suiteMode = new SuiteMode(shared, this.world.screens.screenMacbook);
     this.tvMode = new TVMode(
       { ...shared, renderer: this.renderer, scene: this.scene },
@@ -121,9 +129,14 @@ export default class Experience {
     this.audio = new RoomAudio(this.camera, this.navigation, this.world);
   }
 
+  /** The left computer's mode (kept for older callers); see `crtModes` for all of them. */
+  get crtMode(): CRTMode | null {
+    return this.crtModes[0] ?? null;
+  }
+
   /** True while any cinematic mode has the camera; only one runs at a time. */
   get modeActive(): boolean {
-    return Boolean(this.crtMode?.active || this.suiteMode?.active || this.tvMode?.active);
+    return Boolean(this.crtModes.some((mode) => mode.active) || this.suiteMode?.active || this.tvMode?.active);
   }
 
   private resize(): void {
@@ -134,7 +147,7 @@ export default class Experience {
   /** Frame order follows section 4.1; a mode writes the camera before the render, audio reads it last. */
   private update(): void {
     this.camera.update();
-    this.crtMode?.update();
+    for (const mode of this.crtModes) mode.update();
     this.suiteMode?.update();
     this.tvMode?.update();
     this.renderer.render();
@@ -150,8 +163,8 @@ export default class Experience {
     this.navigation.destroy();
     this.audio?.destroy();
     this.audio = null;
-    this.crtMode?.destroy();
-    this.crtMode = null;
+    for (const mode of this.crtModes) mode.destroy();
+    this.crtModes = [];
     this.suiteMode?.destroy();
     this.suiteMode = null;
     this.tvMode?.destroy();

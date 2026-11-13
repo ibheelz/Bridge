@@ -16,7 +16,7 @@ export default class Renderer {
   post: PostChain | null = null;
   /**
    * Called right after each render, while the drawing buffer still holds the
-   * frame (the luma probe reads pixels here; `preserveDrawingBuffer` stays off).
+   * frame, so pixels can be read without `preserveDrawingBuffer`. Unused now.
    */
   afterRender: Array<() => void> = [];
 

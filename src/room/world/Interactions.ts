@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import type Camera from '../Camera';
 import { HOME_VIEW } from '../Camera';
-import { EVENTS, emit, type HoverDetail } from '../events';
+import type { ComputerId } from '../assets';
+import { EVENTS, emit, type ComputerDetail, type HoverDetail } from '../events';
 import type Navigation from '../Navigation';
 import { getScreenGeo } from '../utils/screenGeo';
 import type World from './World';
@@ -18,9 +19,8 @@ export type TargetId = 'door' | 'macbook' | 'tv' | 'computer';
  * Hover and click on the room's objects (analysis section 7).
  *
  * Only the targets below are raycast; the nearest one under the pointer wins.
- * The door swallows clicks, the laptop and TV fire their events, and the
- * computer (a box around the CRT, built from `screenCRT`) fires
- * `kai:computer-activate`. This class owns the cursor on the target element.
+ * The door swallows clicks, the laptop and TV fire their events, and each
+ * computer (a box around its CRT screen) fires `kai:computer-activate {id}`. This class owns the cursor on the target element.
  */
 export default class Interactions {
   /** Cinematic modes turn this off while they run. */
@@ -36,7 +36,9 @@ export default class Interactions {
   private hitPoint = new THREE.Vector3();
   private meshes: THREE.Mesh[] = [];
   private ids = new Map<THREE.Object3D, TargetId>();
-  private hull: THREE.Box3;
+  private hulls: { id: ComputerId; box: THREE.Box3 }[] = [];
+  /** Which computer the last pick hit, when it hit one. */
+  private computer: ComputerId = 'left';
   private press: { id: number; x: number; y: number } | null = null;
 
   constructor(camera: Camera, navigation: Navigation, element: HTMLElement, world: World) {
@@ -57,10 +59,13 @@ export default class Interactions {
     add('tv', world.screens.screenTV);
     add('tv', world.models.remote);
 
-    const crt = getScreenGeo(world.screens.screenCRT, HOME_VIEW.target);
-    const side = Math.max(crt.size.x, crt.size.y, crt.size.z);
-    this.hull = crt.box.clone().expandByScalar(side * HULL_PADDING);
-    this.hull.union(this.hull.clone().translate(crt.normal.clone().multiplyScalar(-side * HULL_DEPTH)));
+    for (const [id, screen] of Object.entries(world.computers) as [ComputerId, THREE.Mesh][]) {
+      const crt = getScreenGeo(screen, HOME_VIEW.target);
+      const side = Math.max(crt.size.x, crt.size.y, crt.size.z);
+      const box = crt.box.clone().expandByScalar(side * HULL_PADDING);
+      box.union(box.clone().translate(crt.normal.clone().multiplyScalar(-side * HULL_DEPTH)));
+      this.hulls.push({ id, box });
+    }
 
     element.addEventListener('pointerdown', this.onPointerDown);
     element.addEventListener('pointermove', this.onPointerMove);
@@ -107,8 +112,13 @@ export default class Interactions {
       distance = hit.distance;
     }
     const ray = this.raycaster.ray;
-    if (ray.intersectBox(this.hull, this.hitPoint) && ray.origin.distanceTo(this.hitPoint) < distance) {
+    for (const hull of this.hulls) {
+      if (!ray.intersectBox(hull.box, this.hitPoint)) continue;
+      const d = ray.origin.distanceTo(this.hitPoint);
+      if (d >= distance) continue;
+      distance = d;
       id = 'computer';
+      this.computer = hull.id;
     }
     return id;
   }
@@ -128,7 +138,10 @@ export default class Interactions {
   private click(id: TargetId | null): void {
     if (id === 'macbook') emit(EVENTS.macbookActivate);
     else if (id === 'tv') emit(EVENTS.tvToggle);
-    else if (id === 'computer') emit(EVENTS.computerActivate);
+    else if (id === 'computer') {
+      const detail: ComputerDetail = { id: this.computer };
+      emit(EVENTS.computerActivate, detail);
+    }
     // 'door' and null: nothing.
   }
 

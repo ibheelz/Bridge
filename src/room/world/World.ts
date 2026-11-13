@@ -2,10 +2,11 @@ import * as THREE from 'three';
 import {
   MODEL_NAMES,
   ROOMBA_PATH_FILE,
-  SCREEN_NAMES,
+  COMPUTER_SCREENS,
   type ModelName,
   type RoomSource,
-  type ScreenName,
+  type ComputerId,
+  type RoomScreens,
 } from '../assets';
 import type Time from '../utils/Time';
 import ChairTop from './ChairTop';
@@ -26,7 +27,9 @@ import Screens, { type ScreensOptions } from './Screens';
  */
 export default class World {
   models: Record<ModelName, THREE.Group>;
-  screens: Record<ScreenName, THREE.Mesh>;
+  screens: RoomScreens;
+  /** The CRT screen of each computer in this room (the right one is optional). */
+  computers: Partial<Record<ComputerId, THREE.Mesh>> = {};
   chairTop: ChairTop;
   roomba: Roomba;
   coffeeSteam: CoffeeSteam | null = null;
@@ -64,7 +67,11 @@ export default class World {
       this.root.add(group);
     }
 
-    for (const name of SCREEN_NAMES) this.root.add(source.screens[name]);
+    for (const mesh of Object.values(source.screens)) if (mesh) this.root.add(mesh);
+    for (const [id, name] of Object.entries(COMPUTER_SCREENS) as [ComputerId, keyof RoomScreens][]) {
+      const mesh = source.screens[name];
+      if (mesh) this.computers[id] = mesh;
+    }
 
     this.chairTop = new ChairTop(this.models.chairTop);
     const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
@@ -86,7 +93,8 @@ export default class World {
       this.clay = new THREE.MeshStandardMaterial({ color: '#e8e5e0', roughness: 0.85 });
 
       const sun = new THREE.DirectionalLight('#ffffff', 2.2);
-      sun.position.set(6, 8, 6);
+      // Straight in front and above, so both side walls get the same light.
+      sun.position.set(0, 8, 7);
       this.root.add(sun, new THREE.AmbientLight('#ffffff', 0.9));
     }
     return this.clay;
@@ -96,10 +104,10 @@ export default class World {
    * Lights-out for CRT mode (analysis section 8.1): multiplies every material
    * colour down, 1 = as built, 0 = black. The CRT screen has its own level so
    * it can go dark after the room. Meshes whose material has no colour (the
-   * steam shader) are hidden while their level is below 1.
+   * steam shader) are hidden while their level is below 1. `crtMesh` is the
+   * screen of the computer being used; the other one dims with the room.
    */
-  setDim(room: number, crt: number): void {
-    const crtMesh = this.screens.screenCRT;
+  setDim(room: number, crt: number, crtMesh: THREE.Mesh = this.screens.screenCRT): void {
     this.root.traverse((child) => {
       if (!(child instanceof THREE.Mesh)) return;
       const level = child === crtMesh ? crt : room;

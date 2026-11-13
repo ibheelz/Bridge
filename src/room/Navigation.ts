@@ -10,10 +10,11 @@ import { EVENTS } from './events';
 const SMOOTHING = 0.005; // per millisecond
 const LIMITS = {
   radius: { min: 10, max: 50 },
-  phi: { min: 0.01, max: Math.PI / 2 },
-  theta: { min: 0, max: Math.PI / 2 },
+  // Three walls now: orbit stays in front, and not so low that a side wall hides the room.
+  phi: { min: 0.01, max: 0.42 * Math.PI },
+  theta: { min: -0.22 * Math.PI, max: 0.22 * Math.PI },
   target: {
-    x: { min: -4, max: 4 },
+    x: { min: -6, max: 6 },
     y: { min: 1, max: 6 },
     z: { min: -4, max: 4 },
   },

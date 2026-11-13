@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import type Camera from '../Camera';
 import { HOME_VIEW, fovForAspect } from '../Camera';
-import { EVENTS, emit, type CrtModeDetail, type CrtPhase } from '../events';
+import { COMPUTER_SCREENS, type ComputerId, type ScreenName } from '../assets';
+import { EVENTS, emit, type ComputerDetail, type CrtModeDetail, type CrtPhase } from '../events';
 import type Navigation from '../Navigation';
 import { fovToFrame, getScreenGeo } from '../utils/screenGeo';
 import type Sizes from '../utils/Sizes';
@@ -33,6 +34,24 @@ const DRIFT = { x: { speed: 0.0007, amount: 0.012 }, y: { speed: 0.0005, amount:
 /** The CRT glass while the page arrives from the portfolio. */
 const ARRIVAL_SCREEN = '#0a0f0c';
 const POWERDOWN_HASH = '#powerdown';
+/** Which computer the visitor left through, so the arrival comes back to the same one. */
+const LAST_COMPUTER_KEY = 'bridge:computer';
+
+function lastComputer(): ComputerId {
+  try {
+    return window.sessionStorage.getItem(LAST_COMPUTER_KEY) === 'right' ? 'right' : 'left';
+  } catch {
+    return 'left';
+  }
+}
+
+function rememberComputer(id: ComputerId): void {
+  try {
+    window.sessionStorage.setItem(LAST_COMPUTER_KEY, id);
+  } catch {
+    // Not remembered: the arrival then uses the left computer.
+  }
+}
 
 export interface CRTModeOptions {
   camera: Camera;
@@ -42,6 +61,8 @@ export interface CRTModeOptions {
   world: World;
   interactions: Interactions;
   element: HTMLElement;
+  /** Which computer this instance runs; one CRTMode per computer. */
+  computer: ComputerId;
   /** Where the computer leads. */
   destination: string;
   /** False while another mode has the camera. */
@@ -72,6 +93,9 @@ export default class CRTMode {
   private element: HTMLElement;
   private destination: string;
   private canStart: () => boolean;
+  readonly computer: ComputerId;
+  private screenName: ScreenName;
+  private screen: THREE.Mesh;
 
   /** Time spent in the current phase, and since the mode left `idle`. */
   private phaseTime = 0;
@@ -108,16 +132,22 @@ export default class CRTMode {
     this.destination = options.destination;
     this.canStart = options.canStart ?? (() => true);
     this.overlay = document.querySelector<HTMLElement>('.blackout');
+    this.computer = options.computer;
+    this.screenName = COMPUTER_SCREENS[options.computer];
+    const screen = this.world.computers[options.computer];
+    if (!screen) throw new Error(`CRTMode: this room has no ${options.computer} computer`);
+    this.screen = screen;
 
-    const geo = getScreenGeo(this.world.screens.screenCRT, HOME_VIEW.target);
+    const geo = getScreenGeo(screen, HOME_VIEW.target);
     const diagonal = geo.size.length();
     this.screenCenter = geo.center;
     this.screenSide = Math.max(geo.size.x, geo.size.y, geo.size.z);
-    this.right = geo.right;
+    // The right-hand desk mirrors the left one, so its sideways offset is mirrored too.
+    this.right = geo.right.clone().multiplyScalar(options.computer === 'right' ? -1 : 1);
     this.pushPosition = geo.center
       .clone()
       .addScaledVector(geo.normal, diagonal * PUSH.distance)
-      .addScaledVector(geo.right, PUSH.right);
+      .addScaledVector(this.right, PUSH.right);
     this.pushPosition.y += PUSH.up;
     this.closePosition = geo.center.clone().addScaledVector(geo.normal, diagonal * CLOSE.distance);
 
@@ -127,7 +157,7 @@ export default class CRTMode {
     window.addEventListener('pageshow', this.onPageShow);
     this.element.addEventListener('click', this.onClick);
 
-    if (window.location.hash === POWERDOWN_HASH) this.arrive();
+    if (window.location.hash === POWERDOWN_HASH && lastComputer() === this.computer) this.arrive();
   }
 
   get active(): boolean {
@@ -146,7 +176,7 @@ export default class CRTMode {
 
     try {
       this.boot = new BiosBoot();
-      this.world.liveScreens.set('screenCRT', this.boot);
+      this.world.liveScreens.set(this.screenName, this.boot);
     } catch (error) {
       // No 2D canvas: the camera move and the page change still happen.
       console.warn('[room] the CRT boot screen could not be built:', error);
@@ -165,7 +195,7 @@ export default class CRTMode {
   /** Jump to the black screen and change page. */
   skip(): void {
     if (!this.interruptible) return;
-    this.world.setDim(0, 0);
+    this.world.setDim(0, 0, this.screen);
     this.setPhase('black');
   }
 
@@ -184,7 +214,7 @@ export default class CRTMode {
     cancelAnimationFrame(this.leaveFrame);
     window.clearTimeout(this.screenOnTimer);
     this.takeOver();
-    this.world.setDim(1, 1);
+    this.world.setDim(1, 1, this.screen);
     this.screenOff(ARRIVAL_SCREEN);
     this.overlay?.classList.add('is-on');
     this.setPose(this.closePosition, this.screenCenter, this.closeFov());
@@ -213,7 +243,7 @@ export default class CRTMode {
 
   private screenOff(color?: string): void {
     this.boot = null; // disposed by Screens
-    this.world.liveScreens.clear('screenCRT', color);
+    this.world.liveScreens.clear(this.screenName, color);
   }
 
   private setPhase(phase: CrtPhase): void {
@@ -226,6 +256,7 @@ export default class CRTMode {
 
   /** Cover the page in black, let that paint, then go. */
   private leave(): void {
+    rememberComputer(this.computer);
     this.overlay?.classList.add('is-on');
     this.leaveFrame = requestAnimationFrame(() => {
       this.leaveFrame = requestAnimationFrame(() => {
@@ -330,7 +361,7 @@ export default class CRTMode {
         this.holdPushed();
         const room = 1 - Math.min(1, this.phaseTime / LIGHTS_ROOM_MS);
         const crt = 1 - THREE.MathUtils.clamp((this.phaseTime - LIGHTS_ROOM_MS) / LIGHTS_CRT_MS, 0, 1);
-        this.world.setDim(room, crt);
+        this.world.setDim(room, crt, this.screen);
         if (this.phaseTime >= LIGHTS_ROOM_MS + LIGHTS_CRT_MS) this.setPhase('blackhold');
         break;
       }
@@ -379,7 +410,7 @@ export default class CRTMode {
           this.handBack();
           this.screenOnTimer = window.setTimeout(() => {
             if (this.phase !== 'idle') return;
-            this.world.liveScreens.clear('screenCRT');
+            this.world.liveScreens.clear(this.screenName);
             emit(EVENTS.crtScreenOn);
           }, SCREEN_ON_AFTER_MS);
         }
@@ -390,8 +421,15 @@ export default class CRTMode {
 
   // --- Input ---------------------------------------------------------------
 
-  private onActivate = (): void => this.start();
-  private onArrive = (): void => this.arrive();
+  /** No detail (the left label, the keyboard) means the left computer. */
+  private onActivate = (event: Event): void => {
+    const id = (event as CustomEvent<ComputerDetail | undefined>).detail?.id ?? 'left';
+    if (id === this.computer) this.start();
+  };
+
+  private onArrive = (): void => {
+    if (lastComputer() === this.computer) this.arrive();
+  };
 
   private onKeyDown = (e: KeyboardEvent): void => {
     if (!this.interruptible || e.repeat) return;
@@ -414,7 +452,7 @@ export default class CRTMode {
       -((e.clientY - rect.top) / rect.height) * 2 + 1,
     );
     this.raycaster.setFromCamera(this.ndc, this.camera.instance);
-    if (this.raycaster.intersectObject(this.world.screens.screenCRT, false).length > 0) this.skip();
+    if (this.raycaster.intersectObject(this.screen, false).length > 0) this.skip();
     else this.abort();
   };
 

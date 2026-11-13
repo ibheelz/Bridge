@@ -1,5 +1,12 @@
 import * as THREE from 'three';
-import { MODEL_NAMES, SCREEN_NAMES, type ModelName, type RoomSource, type ScreenName } from '../assets';
+import {
+  MODEL_NAMES,
+  OPTIONAL_SCREEN_NAMES,
+  SCREEN_NAMES,
+  type ModelName,
+  type RoomScreens,
+  type RoomSource,
+} from '../assets';
 import type { LoadedFile } from '../utils/Loader';
 
 /** Screens are dark until `Screens` gives them content (the CRT stays dark until it boots). */
@@ -26,14 +33,18 @@ export function createLoadedRoom(items: Record<string, LoadedFile>): RoomSource 
   if (!screensFile || screensFile instanceof THREE.Texture) return missing('screens.glb');
   screensFile.scene.updateMatrixWorld(true);
 
-  const screens = {} as Record<ScreenName, THREE.Mesh>;
+  const screens = {} as RoomScreens;
   for (const name of SCREEN_NAMES) {
     const mesh = screensFile.scene.getObjectByName(name);
     if (!(mesh instanceof THREE.Mesh)) return missing(`mesh "${name}" in screens.glb`);
     screens[name] = mesh;
   }
-  for (const name of SCREEN_NAMES) {
-    const mesh = screens[name];
+  for (const name of OPTIONAL_SCREEN_NAMES) {
+    const mesh = screensFile.scene.getObjectByName(name);
+    if (mesh instanceof THREE.Mesh) screens[name] = mesh;
+  }
+  for (const mesh of Object.values(screens)) {
+    if (!mesh) continue;
     // Keep the world transform when World re-parents the mesh.
     mesh.removeFromParent();
     mesh.matrixWorld.decompose(mesh.position, mesh.quaternion, mesh.scale);

@@ -18,7 +18,16 @@ export type ModelName = (typeof MODEL_NAMES)[number];
 
 /** Screen mesh names: the contract between the modelling tool and the code. */
 export const SCREEN_NAMES = ['screenCRT', 'screenTV', 'screenMacbook', 'screenWhiteboard'] as const;
-export type ScreenName = (typeof SCREEN_NAMES)[number];
+/** Screens a room may have: `screenCRT2` is the second computer, on the right-hand desk. */
+export const OPTIONAL_SCREEN_NAMES = ['screenCRT2'] as const;
+export type RequiredScreenName = (typeof SCREEN_NAMES)[number];
+export type ScreenName = RequiredScreenName | (typeof OPTIONAL_SCREEN_NAMES)[number];
+/** The screens of a room: the required ones always, the optional ones when the room has them. */
+export type RoomScreens = Record<RequiredScreenName, THREE.Mesh> & Partial<Record<ScreenName, THREE.Mesh>>;
+
+/** The computers: `left` uses `screenCRT`, `right` uses `screenCRT2`. */
+export type ComputerId = 'left' | 'right';
+export const COMPUTER_SCREENS: Record<ComputerId, ScreenName> = { left: 'screenCRT', right: 'screenCRT2' };
 
 /** Waypoints for the roomba, fetched at runtime (shape in analysis section 3.3). */
 export const ROOMBA_PATH_FILE = 'assets/roomba-path.json';
@@ -37,7 +46,7 @@ export const ROOMBA_PATH_FILE = 'assets/roomba-path.json';
  */
 export interface RoomSource {
   models: Record<ModelName, THREE.Group>;
-  screens: Record<ScreenName, THREE.Mesh>;
+  screens: RoomScreens;
   textures: Partial<Record<ModelName, THREE.Texture>>;
   /**
    * Optional steam ribbon over the mug: a subdivided plane in world space with
