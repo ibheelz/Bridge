@@ -7,15 +7,16 @@ import type Renderer from '../Renderer';
 import { getScreenGeo } from '../utils/screenGeo';
 import FlyMode, { type FlyConfig, type FlyModeOptions } from './FlyMode';
 
-/** Analysis section 8.2. */
+/**
+ * Analysis section 8.2, except the pose: the camera sits straight in front of
+ * the TV, level with the screen's centre, and holds still (user request: flat,
+ * like 2D, no angle). The spec's pose sat 0.87 to the side at sofa eye height
+ * (2.1), looking 0.98 below the screen's centre, with a slight sway.
+ */
 const DISTANCE = 7.35;
-const RIGHT = 0.87;
-const EYE_HEIGHT = 2.1;
-const TARGET_DROP = 0.98;
 const FOV = 33;
 const ENTER_MS = 2400;
 const EXIT_MS = 1800;
-const DRIFT = { x: { speed: 0.0006, amount: 0.02 }, y: { speed: 0.00045, amount: 0.012 } } as const;
 
 /** Depth of field: focus starts short of the TV and racks onto it at the end of the fly-in. */
 const MAX_BLUR = 0.016;
@@ -25,21 +26,9 @@ const RACK_FROM = 0.6; // fraction of the fly-in after which the focus moves
 
 function poseFor(screen: THREE.Mesh): { config: FlyConfig; center: THREE.Vector3 } {
   const geo = getScreenGeo(screen, HOME_VIEW.target);
-  const position = geo.center
-    .clone()
-    .addScaledVector(geo.normal, DISTANCE)
-    .addScaledVector(geo.right, RIGHT);
-  position.y = EYE_HEIGHT;
+  const position = geo.center.clone().addScaledVector(geo.normal, DISTANCE);
   const target = geo.center.clone();
-  target.y -= TARGET_DROP;
-  const config: FlyConfig = {
-    position,
-    target,
-    fov: FOV,
-    enterMs: ENTER_MS,
-    exitMs: EXIT_MS,
-    drift: { right: geo.right, ...DRIFT },
-  };
+  const config: FlyConfig = { position, target, fov: FOV, enterMs: ENTER_MS, exitMs: EXIT_MS };
   return { config, center: geo.center };
 }
 

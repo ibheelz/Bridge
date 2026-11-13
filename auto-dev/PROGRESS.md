@@ -205,5 +205,7 @@ Build the room procedurally in code behind the same interfaces the GLB loader wi
 
 - Straight-on monitor view (user request, 2026-11-13): clicking either monitor now pushes the camera straight along the screen's normal to a point level with the screen's centre (`PUSH.right` and `PUSH.up` 0, was 0.9 and 1.45), with no drift while booting, so the screen faces the viewer flat. Same distance and framing as before; the arrival close-up was already straight on. Line of sight checked by hand: it passes above the chairs, sofa and laptop.
 
+- Straight-on TV view (user request, 2026-11-13): TV mode now ends straight in front of the screen at its centre height (about y 3.7, z 2.8, above the sofa back), looking at the centre, no drift. Distance, field of view, timings and the depth-of-field focus rack are unchanged.
+
 ## Next step
 Nothing left that can be done without the user. Next is the browser check (checklist in `auto-dev/HANDOFF.md`, section 8), then the blocked items at the top of this file.
