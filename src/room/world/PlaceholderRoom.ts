@@ -151,8 +151,6 @@ function desk(side: Side, F: number) {
   const screenRotation: V3 = [0, side === 'left' ? Math.PI / 2 : -Math.PI / 2, 0];
   const decor = [
     sideBox(side, [W + 0.4, 2.8, -HALF_Z], [W + 2.2, 4.4, -HALF_Z + 0.06]), // pegboard, back wall
-    sideBox(side, [W, 4.2, 1.6], [W + 0.04, 5.3, 3.1]), // poster, side wall
-    sideBox(side, [W, 4.4, -1.6], [W + 0.04, 5.2, -0.6]), // poster, side wall
   ];
   return { workStation, retro, seat, screenCenter, screenRotation, decor };
 }
@@ -200,7 +198,7 @@ export function createPlaceholderRoom(): RoomSource {
     box([1.55, F, 1.9], [1.8, SOFA_SEAT + 0.4, 3.45]),
   ]);
 
-  // --- Wall decor: pegboards and posters by each desk ----------------------
+  // --- Wall decor: a pegboard on the back wall by each desk ----------------
   const wallDecor = model('wallDecor', [-HALF_X + 1.3, 3.6, -HALF_Z], [...left.decor, ...right.decor]);
 
   // --- Laptop on the table, screen facing the sofa (+z) -------------------

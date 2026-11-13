@@ -154,5 +154,7 @@ Build the room procedurally in code behind the same interfaces the GLB loader wi
 
 - Taller walls (user request, 2026-11-13, for a chandelier the user will add): walls are 8 units tall (top at y 8.32, was 5.7 / 6.02). To keep the room edge to edge across the width, the home view is radius 29.2 looking at (0, 3, 0); zoom-out stops at 32.5. Trade-off: at 16:9 the wall tops run about 16% past the top of the screen (the floor stays in view); at 16:10 about 4%; from 4:3 down to phones the whole room fits. Screens wider than 16:9 show side margins. No ceiling was added. Checked numerically only.
 
+- Posters removed (user request, 2026-11-13): the two posters on each side wall are gone; the pegboards on the back wall stay.
+
 ## Next step
 Nothing left that can be done without the user. Next is the browser check (checklist in `auto-dev/HANDOFF.md`, section 8), then the blocked items at the top of this file.
