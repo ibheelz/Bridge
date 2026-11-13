@@ -1,6 +1,6 @@
 # Status: code steps complete
 
-**Camera is locked (user, 2026-11-13).** `HOME_VIEW` (radius 24.2, phi 0.4 pi, theta 0, target (0, 3, 0)), `fovForAspect` (horizontal half-angle 17.4 degrees, cap 70) and the navigation `LIMITS` (radius 10-28, phi 0.01-0.42 pi, theta +/-0.22 pi, pan x +/-6, y 1-6, z +/-4) are final. Never change them to make something fit; change the content instead.
+**Camera is locked (user, 2026-11-13).** `HOME_VIEW` (radius 24.2, phi 0.4 pi, theta 0, target (0, 3, 0)), `fovForAspect` (horizontal half-angle 17.4 degrees, cap 70) and the navigation `LIMITS` (radius 10-28, phi 0.01-0.42 pi, theta +/-0.22 pi, pan x +/-6, y 1-6, z +/-4) are final. Never change them to make something fit; change the content instead. One exception, asked for by the user: zoomed in, the sideways turn widens (up to +/-pi/2) only as far as keeps the camera between the side walls (`thetaLimits`), so the desks can be seen face on; at the home view and zoomed out the locked +/-0.22 pi applies.
 
 Steps 0 to 10 and 12 are built and committed on `auto-dev` (not pushed). `npm run build`: 2 pages, 0 errors, 0 warnings, 0 hints. **None of it has been checked in a browser.** The unattended loop is stopped (`auto-dev/STOP`).
 
@@ -198,6 +198,8 @@ Build the room procedurally in code behind the same interfaces the GLB loader wi
 - Desk mats (user request, 2026-11-13): a long patterned mat under each keyboard. Design desk: charcoal with a dot grid and flowing teal lines (z -1.5 to 0.8, the tablet sits beyond it). IT desk: deep navy with circuit traces and pads in muted blue (z -1.4 to 1.4). Patterns are drawn on canvases in `PlaceholderRoom.ts` (`MAT_STYLES`); the mats keep their own lit material (`userData.ownMaterial`, which World now leaves alone). Colours chosen dark and muted so they do not fight the walnut desks, the RGB or the status lights.
 
 - Two-finger trackpad panning was tried and reverted at the user's request (2026-11-13): the wheel and trackpad swipe zoom in and out, as before.
+
+- Face-on desk view when zoomed in (user request, 2026-11-13): `Navigation.thetaLimits()` widens the orbit's sideways limit with zoom: the camera may turn up to 90 degrees as long as it stays within x +/-6.5 (inside the side walls) for the current zoom, tilt and pan. At the home distance the room-based limit is about +/-0.09 pi, so the locked +/-0.22 pi still governs; at radius 10 panned to a desk it reaches 90 degrees. Zooming out after turning swings the camera back within the limit smoothly. Home view, zoom limits, tilt limits and pan limits unchanged. Checked numerically only.
 
 ## Next step
 Nothing left that can be done without the user. Next is the browser check (checklist in `auto-dev/HANDOFF.md`, section 8), then the blocked items at the top of this file.

@@ -6,7 +6,7 @@ import type Sizes from './utils/Sizes';
 import type Time from './utils/Time';
 import { EVENTS } from './events';
 
-/** Analysis section 4.4. LOCKED (user, 2026-11-13): the home view, field of view and navigation limits are final. Do not change them; adapt the room instead. */
+/** Analysis section 4.4. LOCKED (user, 2026-11-13): the home view, field of view and navigation limits are final. Do not change them; adapt the room instead. Only exception (user request): zoomed in, the sideways turn widens as far as the room allows (`thetaLimits`). */
 const SMOOTHING = 0.005; // per millisecond
 const LIMITS = {
   // Zooming out stops a little past the home view (radius 24.2): at the limit a strip of the corridor rug shows, not the building below.
@@ -21,6 +21,13 @@ const LIMITS = {
   },
 } as const;
 const ORBIT_SENSITIVITY = 1;
+/**
+ * Zoomed in, the camera may turn further sideways than `LIMITS.theta`, as far
+ * as keeps it inside the room (this far either side of the centre), so the
+ * desks on the side walls can be seen face on. At the home view and zoomed
+ * out this adds nothing: the locked ±0.22 pi applies (see `thetaLimits`).
+ */
+const INSIDE_HALF_X = 6.5;
 const PAN_PER_PIXEL = 0.01;
 const ZOOM_PER_PIXEL = 0.01;
 const PINCH_FACTOR = 3;
@@ -121,9 +128,27 @@ export default class Navigation {
     }
   }
 
+  /**
+   * Sideways turn allowed right now: the locked limits, widened only as far as
+   * the camera stays between the side walls for the current zoom and pan.
+   */
+  private thetaLimits(): { min: number; max: number } {
+    const s = this.spherical.value;
+    const reach = Math.max(0.001, s.radius * Math.sin(s.phi)); // horizontal distance camera-target
+    const x = this.target.value.x;
+    const toAngle = (room: number): number => (room >= reach ? Math.PI / 2 : Math.asin(Math.max(0, room / reach)));
+    return {
+      min: Math.min(LIMITS.theta.min, -toAngle(INSIDE_HALF_X + x)),
+      max: Math.max(LIMITS.theta.max, toAngle(INSIDE_HALF_X - x)),
+    };
+  }
+
   update(): void {
     const t = Math.min(1, SMOOTHING * this.time.delta);
     const sv = this.spherical.value;
+    // Zooming out (or panning) after turning sideways brings the turn back within what is allowed.
+    const turn = this.thetaLimits();
+    sv.theta = clamp(sv.theta, turn.min, turn.max);
     const ss = this.spherical.smoothed;
     ss.radius += (sv.radius - ss.radius) * t;
     ss.phi += (sv.phi - ss.phi) * t;
@@ -167,7 +192,8 @@ export default class Navigation {
   private orbit(dx: number, dy: number): void {
     const side = Math.max(1, this.sizes.smallestSide);
     const s = this.spherical.value;
-    s.theta = clamp(s.theta - (dx / side) * ORBIT_SENSITIVITY, LIMITS.theta.min, LIMITS.theta.max);
+    const turn = this.thetaLimits();
+    s.theta = clamp(s.theta - (dx / side) * ORBIT_SENSITIVITY, turn.min, turn.max);
     s.phi = clamp(s.phi - (dy / side) * ORBIT_SENSITIVITY, LIMITS.phi.min, LIMITS.phi.max);
   }
 
