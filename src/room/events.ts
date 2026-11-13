@@ -19,6 +19,7 @@ export const EVENTS = {
   suiteClose: 'kai:suite-close',
   mute: 'kai:mute',
   introOpen: 'kai:intro-open',
+  sky: 'kai:sky',
 } as const;
 
 /** Detail of `kai:tvmode` and `kai:suite`. */
@@ -51,6 +52,14 @@ export type CrtPhase =
 
 export interface CrtModeDetail {
   phase: CrtPhase;
+}
+
+/** Detail of `kai:sky`: the outside sky's colours (sRGB hex) for the page behind the canvas. */
+export interface SkyDetail {
+  top: string;
+  horizon: string;
+  /** The sun is well below the horizon: page chrome should switch to light ink. */
+  night: boolean;
 }
 
 export interface MuteDetail {

@@ -25,7 +25,7 @@ const tvFile = fs.existsSync(screensDir)
   : undefined;
 const tvVideo = tvFile ? `${base}assets/screens/${encodeURIComponent(tvFile)}` : undefined;
 const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
-const pageTitle = 'Abiola Adeyeye';
+const pageTitle = "Abiola's Room";
 const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://abioladeyeye.com').href;
 ---
 <html lang="en">
@@ -71,9 +71,11 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://abioladeyey
       }
       .room-experience {
         overflow: hidden;
-        background: radial-gradient(120% 90% at 50% 38%, #ffffff 0, #f1eee8 55%, #dcd7cf);
+        /* The outdoor sky (src/ui/sky.ts sets these); pale until the room is built. */
+        background: linear-gradient(to bottom, var(--sky-top, #ffffff), var(--sky-horizon, #f1eee8));
+        transition: background 1s ease;
       }
-      /* Labels will sit at z-index 1, behind this transparent canvas layer. */
+      /* The canvas layer: transparent where nothing is drawn. */
       /* touch-action here, not on the page: pinch zooms the room, while the rest of the page stays zoomable. */
       .room-experience__target {
         position: absolute;
@@ -109,6 +111,11 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://abioladeyey
       }
       .overlay__button:focus { outline: none; }
       .overlay__button:focus-visible { outline: 2px solid #2d2b28; outline-offset: -4px; }
+      /* Dark sky: light ink. */
+      .is-night .overlay__button { color: #f2efe959; }
+      .is-night .overlay__button:hover,
+      .is-night .overlay__button:focus-visible { color: #f2efe9d9; }
+      .is-night .overlay__button:focus-visible { outline-color: #f2efe9; }
       .overlay__button svg {
         display: block;
         fill: none;
@@ -399,10 +406,12 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://abioladeyey
       import { initSuite } from '../ui/suite';
       import { initOverlay } from '../ui/overlay';
       import { initRoomKeys } from '../ui/roomKeys';
+      import { initSky } from '../ui/sky';
 
       initSuite(document.querySelector<HTMLElement>('.suite'));
       initOverlay(document.querySelector<HTMLElement>('.overlay'));
       initRoomKeys(document.querySelector<HTMLElement>('.room-keys'));
+      initSky(document.querySelector<HTMLElement>('.room-experience'));
 
       /** A throwaway canvas tells whether WebGL is there before the room is built. */
       function hasWebGL(): boolean {

@@ -30,13 +30,16 @@ const CHAIR_Z = -0.05;
 const MUG: V3 = [-5.07, DESK_TOP, -1.37]; // centre of the mug's base, on the left desk
 const MUG_HEIGHT = 0.26;
 const SHOW_WHITEBOARD = false;
+/** The TV on the back wall: centred, 4.4 wide (screen x and y extents). */
+const TV = { x0: -2.2, x1: 2.2, y0: 2.49, y1: 4.86 } as const;
 /**
- * Windows on the back wall: square, level with the TV (same bottom and top),
- * each centred in the stretch of wall between the TV and a side wall, so about
- * 1.1 of wall shows on either side. `WINDOW_CENTER_X` is the left one; the right mirrors it.
+ * Windows: square openings cut through the back wall, vertically centred on
+ * the TV, with about 1.1 of plain wall between each window frame and the TV.
+ * `WINDOW_CENTER_X` is the left one; the right one mirrors it.
  */
-const WINDOW_CENTER_X = -4.47;
-const WINDOW = { width: 2.6, sill: 2.37, height: 2.6, frame: 0.12, depth: 0.1 } as const;
+const WINDOW = { width: 2.2, height: 2.2, frame: 0.12, depth: 0.1 } as const;
+const WINDOW_CENTER_X = -4.75;
+const WINDOW_SILL = (TV.y0 + TV.y1) / 2 - WINDOW.height / 2;
 
 /** World replaces this with clay (or a baked material) before anything renders. */
 const blank = new THREE.MeshBasicMaterial({ color: '#cccccc' });
@@ -75,9 +78,9 @@ const COLORS = {
   remote: '#232326',
 } as const;
 
-/** Marks a mesh as window glass; World gives it the live sky. */
+/** Marks a mesh as window glass; World gives it the faint glass material. */
 function glass(mesh: THREE.Mesh): THREE.Mesh {
-  mesh.userData.windowSky = true;
+  mesh.userData.windowGlass = true;
   return mesh;
 }
 
@@ -152,25 +155,49 @@ function screen(
 const SCREEN_OFF = '#15161a';
 
 /**
- * A window drawn on the inside of the back wall: a glass panel inside a
- * frame, split into four panes. The wall behind is not cut; it is a placeholder.
- * The glass shows the visitor's sky (WindowSky.ts).
+ * A window in its opening in the back wall: frame lining the opening through
+ * the wall's thickness, a cross bar, and faint glass. The outdoor scene
+ * (Outdoors.ts) shows through it.
  */
 function windowOnBackWall(cx: number): THREE.Mesh[] {
-  const { width, sill, height, frame, depth } = WINDOW;
-  const z0 = -HALF_Z;
+  const { width, height, frame, depth } = WINDOW;
+  const sill = WINDOW_SILL;
+  const z0 = -HALF_Z - WALL_THICKNESS;
   const x0 = cx - width / 2;
   const x1 = cx + width / 2;
   const y1 = sill + height;
   const ym = sill + height / 2;
+  const z1 = -HALF_Z + depth; // frame stands a little proud of the inside face
+  const zm = -HALF_Z - WALL_THICKNESS / 2;
   return [
-    glass(box([x0, sill, z0], [x1, y1, z0 + 0.02])),
-    box([x0 - frame, sill - frame, z0], [x1 + frame, sill, z0 + depth], COLORS.windowFrame), // sill
-    box([x0 - frame, y1, z0], [x1 + frame, y1 + frame, z0 + depth], COLORS.windowFrame), // head
-    box([x0 - frame, sill, z0], [x0, y1, z0 + depth], COLORS.windowFrame), // jambs
-    box([x1, sill, z0], [x1 + frame, y1, z0 + depth], COLORS.windowFrame),
-    box([cx - frame / 3, sill, z0], [cx + frame / 3, y1, z0 + depth * 0.8], COLORS.windowFrame), // mullion
-    box([x0, ym - frame / 3, z0], [x1, ym + frame / 3, z0 + depth * 0.8], COLORS.windowFrame), // transom
+    glass(box([x0, sill, zm - 0.01], [x1, y1, zm + 0.01])),
+    box([x0 - frame, sill - frame, z0], [x1 + frame, sill, z1], COLORS.windowFrame), // sill
+    box([x0 - frame, y1, z0], [x1 + frame, y1 + frame, z1], COLORS.windowFrame), // head
+    box([x0 - frame, sill, z0], [x0, y1, z1], COLORS.windowFrame), // jambs
+    box([x1, sill, z0], [x1 + frame, y1, z1], COLORS.windowFrame),
+    box([cx - frame / 3, sill, zm - 0.03], [cx + frame / 3, y1, zm + 0.03], COLORS.windowFrame), // mullion
+    box([x0, ym - frame / 3, zm - 0.03], [x1, ym + frame / 3, zm + 0.03], COLORS.windowFrame), // transom
+  ];
+}
+
+/** The back wall in pieces, leaving the two window openings (frame included) open. */
+function backWall(F: number): THREE.Mesh[] {
+  const z: [number, number] = [-HALF_Z - WALL_THICKNESS, -HALF_Z];
+  const half = WINDOW.width / 2 + WINDOW.frame;
+  const inner = Math.abs(WINDOW_CENTER_X) - half; // opening edges, x > 0
+  const outer = Math.abs(WINDOW_CENTER_X) + half;
+  const bottom = WINDOW_SILL - WINDOW.frame;
+  const top = WINDOW_SILL + WINDOW.height + WINDOW.frame;
+  const piece = (x0: number, x1: number, y0: number, y1: number): THREE.Mesh =>
+    box([x0, y0, z[0]], [x1, y1, z[1]], COLORS.wall);
+  return [
+    piece(-HALF_X, -outer, F, WALL_TOP), // left of the left window
+    piece(-inner, inner, F, WALL_TOP), // middle, behind the TV
+    piece(outer, HALF_X, F, WALL_TOP), // right of the right window
+    piece(-outer, -inner, F, bottom), // under and over each window
+    piece(-outer, -inner, top, WALL_TOP),
+    piece(inner, outer, F, bottom),
+    piece(inner, outer, top, WALL_TOP),
   ];
 }
 
@@ -237,7 +264,7 @@ export function createPlaceholderRoom(): RoomSource {
   const roomModel = model('roomModel', [0, F, 0], [
     box([-HALF_X - WALL_THICKNESS, F - 0.25, -HALF_Z - WALL_THICKNESS], [HALF_X + WALL_THICKNESS, F, HALF_Z], COLORS.floor),
     box([-HALF_X - WALL_THICKNESS, F, -HALF_Z - WALL_THICKNESS], [-HALF_X, WALL_TOP, HALF_Z], COLORS.wall), // left
-    box([-HALF_X, F, -HALF_Z - WALL_THICKNESS], [HALF_X, WALL_TOP, -HALF_Z], COLORS.wall), // back
+    ...backWall(F),
     box([HALF_X, F, -HALF_Z - WALL_THICKNESS], [HALF_X + WALL_THICKNESS, WALL_TOP, HALF_Z], COLORS.wall), // right
   ]);
 
@@ -255,10 +282,10 @@ export function createPlaceholderRoom(): RoomSource {
   chairTop.add(left.seat, right.seat);
 
   // --- Living area: TV centred on the back wall, table, sofa facing it -----
-  const tv = { x0: -1.83, x1: 1.83, y0: 2.49, y1: 4.86 };
+  const tv = TV;
   const livingRoom = model('livingRoom', [0, F, -0.8], [
     box([-1.9, F, -2.4], [1.9, F + 0.03, 1.6], COLORS.rug), // rug
-    box([-1.72, F, -HALF_Z], [1.72, 1.3, -3.9], COLORS.console), // console under the TV
+    box([-2.1, F, -HALF_Z], [2.1, 1.3, -3.9], COLORS.console), // console under the TV
     box([tv.x0 - 0.1, tv.y0 - 0.1, -HALF_Z], [tv.x1 + 0.1, tv.y1 + 0.1, -4.56], COLORS.tv), // TV body
     box([-1.42, 1.3, -4.5], [-0.72, 1.38, -4.05], COLORS.bookA), // books on the console
     box([-1.37, 1.38, -4.48], [-0.77, 1.46, -4.08], COLORS.bookB),
@@ -302,7 +329,7 @@ export function createPlaceholderRoom(): RoomSource {
   const windows = [WINDOW_CENTER_X, -WINDOW_CENTER_X].flatMap((x) => windowOnBackWall(x));
 
   // --- Wall decor: just the windows now ------------------------------------
-  const wallDecor = model('wallDecor', [WINDOW_CENTER_X, WINDOW.sill + WINDOW.height / 2, -HALF_Z], windows);
+  const wallDecor = model('wallDecor', [WINDOW_CENTER_X, WINDOW_SILL + WINDOW.height / 2, -HALF_Z], windows);
 
   // --- Small props --------------------------------------------------------
   const roomba = model('roomba', [-3, F, 4.1], [cylinder([-3, F, 4.1], 0.45, 0.18, COLORS.roomba)]);

@@ -14,7 +14,7 @@ import CoffeeSteam from './CoffeeSteam';
 import Door from './Door';
 import Roomba from './Roomba';
 import Screens, { type ScreensOptions } from './Screens';
-import WindowSky from './WindowSky';
+import Outdoors from './Outdoors';
 
 /**
  * Puts a RoomSource into the scene (analysis section 4.6).
@@ -37,8 +37,8 @@ export default class World {
   /** Contents of the screens; `screens` above holds the meshes. */
   liveScreens: Screens;
   door: Door;
-  /** The sky shown in the window glass; exists when the room has window panes. */
-  windowSky: WindowSky | null = null;
+  /** Sky, ground, hills and trees around the room, coloured for the visitor's time of day. */
+  outdoors: Outdoors;
 
   private scene: THREE.Scene;
   private time: Time;
@@ -54,6 +54,8 @@ export default class World {
     this.models = source.models;
     this.screens = source.screens;
     this.root.name = 'world';
+    this.outdoors = new Outdoors();
+    this.root.add(this.outdoors.group);
 
     for (const name of MODEL_NAMES) {
       const group = source.models[name];
@@ -64,10 +66,9 @@ export default class World {
         if (!(child instanceof THREE.Mesh)) return;
         // Without a bake, a mesh may ask for a clay colour of its own (the placeholder does).
         const tint = child.userData.clayColor as string | undefined;
-        // Window glass shows the visitor's sky: flagged in the placeholder, or named `windowGlass…` in a GLB.
-        if (child.userData.windowSky || child.name.startsWith('windowGlass')) {
-          this.windowSky ??= new WindowSky();
-          child.material = this.windowSky.material;
+        // Window glass: flagged in the placeholder, or named `windowGlass…` in a GLB. Faint, so the outside shows.
+        if (child.userData.windowGlass || child.name.startsWith('windowGlass')) {
+          child.material = this.outdoors.glass;
         } else {
           child.material = baked ?? (tint ? this.getTinted(tint) : this.getClay());
         }
@@ -135,6 +136,12 @@ export default class World {
       const level = child === crtMesh ? crt : room;
       const material = child.material as THREE.Material | THREE.Material[];
       for (const m of Array.isArray(material) ? material : [material]) {
+        // The outdoor shaders take a dim level as a uniform rather than a colour.
+        const uniforms = (m as THREE.ShaderMaterial).uniforms;
+        if (uniforms?.uDim) {
+          uniforms.uDim.value = level;
+          continue;
+        }
         const color = (m as THREE.MeshBasicMaterial).color;
         if (!(color instanceof THREE.Color)) {
           child.visible = level >= 1;
@@ -157,7 +164,7 @@ export default class World {
     this.coffeeSteam?.update(this.time.elapsed);
     this.liveScreens.update(this.time.delta);
     this.door.update(this.time.delta);
-    this.windowSky?.update(this.time.delta);
+    this.outdoors.update(this.time.delta);
   }
 
   destroy(): void {
@@ -178,7 +185,6 @@ export default class World {
     }
     // The base clay may be unused when every mesh has its own colour.
     this.clay?.dispose();
-    this.windowSky?.destroy();
-    this.windowSky = null;
+    this.outdoors.destroy();
   }
 }

@@ -14,7 +14,7 @@ const BLOBS = [
 export default class TestPattern extends CanvasScreen {
   private elapsed = 0;
 
-  constructor(width = 1024, height = 664) {
+  constructor(width = 1024, height = 552) {
     super(width, height);
   }
 
