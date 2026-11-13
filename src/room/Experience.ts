@@ -3,6 +3,7 @@ import Time from './utils/Time';
 import Sizes from './utils/Sizes';
 import Camera from './Camera';
 import Renderer from './Renderer';
+import Navigation from './Navigation';
 import World from './world/World';
 import { createPlaceholderRoom } from './world/PlaceholderRoom';
 
@@ -31,6 +32,7 @@ export default class Experience {
   camera!: Camera;
   renderer!: Renderer;
   world!: World;
+  navigation!: Navigation;
 
   constructor(options?: ExperienceOptions) {
     if (Experience.instance) return Experience.instance;
@@ -48,6 +50,7 @@ export default class Experience {
     this.renderer = new Renderer(this.sizes, this.scene, this.camera, this.targetElement);
     // Step 3 swaps this for Resources, falling back to the placeholder.
     this.world = new World(this.scene, createPlaceholderRoom());
+    this.navigation = new Navigation(this.camera, this.sizes, this.time, this.targetElement);
 
     this.sizes.on('resize', () => this.resize());
     this.time.on('tick', () => this.update());
@@ -58,16 +61,18 @@ export default class Experience {
     this.renderer.resize();
   }
 
-  /** Frame order follows section 4.1; modes, navigation and audio slot in later. */
+  /** Frame order follows section 4.1; modes and audio slot in later. */
   private update(): void {
     this.camera.update();
     this.renderer.render();
     this.world.update();
+    this.navigation.update();
   }
 
   destroy(): void {
     this.time.destroy();
     this.sizes.destroy();
+    this.navigation.destroy();
     this.world.destroy();
     this.renderer.destroy();
     if (window.experience === this) delete window.experience;
