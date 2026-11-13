@@ -1,5 +1,7 @@
 # Status: code steps complete
 
+**Camera is locked (user, 2026-11-13).** `HOME_VIEW` (radius 24.2, phi 0.4 pi, theta 0, target (0, 3, 0)), `fovForAspect` (horizontal half-angle 17.4 degrees, cap 70) and the navigation `LIMITS` (radius 10-28, phi 0.01-0.42 pi, theta +/-0.22 pi, pan x +/-6, y 1-6, z +/-4) are final. Never change them to make something fit; change the content instead.
+
 Steps 0 to 10 and 12 are built and committed on `auto-dev` (not pushed). `npm run build`: 2 pages, 0 errors, 0 warnings, 0 hints. **None of it has been checked in a browser.** The unattended loop is stopped (`auto-dev/STOP`).
 
 Blocked on the user:

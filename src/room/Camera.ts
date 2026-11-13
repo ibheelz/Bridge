@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import type Sizes from './utils/Sizes';
 
 /**
+ * LOCKED (user, 2026-11-13): the home view, field of view and navigation limits are final. Do not change them; adapt the room instead.
+ *
  * Home view (analysis section 4.4, changed for the wider three-wall room):
  * straight on from the open front (theta 0), 18 degrees above level
  * (phi 0.4 pi), framed on the room alone: at 16:9 the corridor and the

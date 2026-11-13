@@ -6,7 +6,7 @@ import type Sizes from './utils/Sizes';
 import type Time from './utils/Time';
 import { EVENTS } from './events';
 
-/** Analysis section 4.4. */
+/** Analysis section 4.4. LOCKED (user, 2026-11-13): the home view, field of view and navigation limits are final. Do not change them; adapt the room instead. */
 const SMOOTHING = 0.005; // per millisecond
 const LIMITS = {
   // Zooming out stops a little past the home view (radius 24.2): at the limit a strip of the corridor rug shows, not the building below.
