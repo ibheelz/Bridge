@@ -20,6 +20,9 @@ export default class Renderer {
    */
   afterRender: Array<() => void> = [];
 
+  /** True between `webglcontextlost` and `webglcontextrestored`; nothing is drawn meanwhile. */
+  contextLost = false;
+
   private sizes: Sizes;
   private scene: THREE.Scene;
   private camera: Camera;
@@ -42,9 +45,40 @@ export default class Renderer {
     canvas.style.height = '100%';
     canvas.style.display = 'block';
     target.appendChild(canvas);
+    canvas.addEventListener('webglcontextlost', this.onContextLost);
+    canvas.addEventListener('webglcontextrestored', this.onContextRestored);
 
     this.resize();
   }
+
+  /** Section 13.4: keep the page alive through a lost GPU context. */
+  private onContextLost = (event: Event): void => {
+    event.preventDefault(); // tells the browser we want the context back
+    this.contextLost = true;
+  };
+
+  /** three.js rebuilds its GPU state itself; canvas and video textures need a fresh upload. */
+  private onContextRestored = (): void => {
+    this.contextLost = false;
+    this.resize();
+    this.scene.traverse((object) => {
+      const materials = (object as THREE.Mesh).material;
+      if (!materials) return;
+      for (const material of Array.isArray(materials) ? materials : [materials]) {
+        for (const value of Object.values(material)) {
+          if (value instanceof THREE.CanvasTexture || value instanceof THREE.VideoTexture) value.needsUpdate = true;
+        }
+        if (material instanceof THREE.ShaderMaterial) {
+          for (const uniform of Object.values(material.uniforms)) {
+            const value = uniform.value;
+            if (value instanceof THREE.CanvasTexture || value instanceof THREE.VideoTexture) value.needsUpdate = true;
+          }
+        }
+      }
+    });
+    const background = this.scene.background;
+    if (background instanceof THREE.CanvasTexture) background.needsUpdate = true;
+  };
 
   resize(): void {
     this.instance.setPixelRatio(this.sizes.pixelRatio);
@@ -60,6 +94,7 @@ export default class Renderer {
   }
 
   render(): void {
+    if (this.contextLost) return;
     if (this.post) this.post.render();
     else this.instance.render(this.scene, this.camera.instance);
     for (const callback of this.afterRender) callback();
@@ -67,6 +102,9 @@ export default class Renderer {
 
   destroy(): void {
     this.afterRender.length = 0;
+    const canvas = this.instance.domElement;
+    canvas.removeEventListener('webglcontextlost', this.onContextLost);
+    canvas.removeEventListener('webglcontextrestored', this.onContextRestored);
     this.instance.dispose();
     this.instance.domElement.remove();
   }
