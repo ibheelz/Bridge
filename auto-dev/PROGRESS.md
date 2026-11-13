@@ -32,7 +32,7 @@ Build the room procedurally in code behind the same interfaces the GLB loader wi
 - [x] 7. CRT mode: BIOS boot canvas, camera push, lights-out, navigation to `/portfolio`, and `#powerdown` arrival. Create a minimal `/portfolio` page with a "Home" link back.
 - [x] 8. TV mode (composer, bokeh, background swap) and laptop mode with its panel.
 - [x] 9. HTML labels, room-rect placement, luma probe, role rotation, settings + sound buttons.
-- [x] 10. Audio graph: synthesized roomba, mute, duck, tab-away suspend. Skip sample files that do not exist.
+- [x] 10. Audio graph: synthesized roomba, mute, duck, tab-away suspend. Skip sample files that do not exist. (Later removed at the user's request.)
 - [x] 12. Polish: reduced motion, no-WebGL fallback, context loss, dispose, meta/OG tags.
 
 ## Blocked on user (do not attempt)
@@ -185,6 +185,9 @@ Build the room procedurally in code behind the same interfaces the GLB loader wi
 - Home view restored (user request, 2026-11-13): back to radius 24.2 looking at (0, 3, 0), zoom-out limit 28. At 16:9 the corridor, railing and building body are off-screen on load; at the zoom-out limit a strip of the corridor rug shows at the bottom (railing and building still hidden). On narrower screens (taller vertical view) more of the corridor and building shows. Checked numerically only.
 
 - Seams removed (user request, 2026-11-13): the light blue vertical strips at the room's wall edges and between the other units are gone; the facade is plain white.
+
+- Two different desks (user request, 2026-11-13). Left = design (motion design, animation): a curved ~21:9 monitor (2.4 x 1.03 screen, bent plane; its normals stay flat so `getScreenGeo` still reads the facing direction), a black gaming tower with a smoked glass side facing the front, RGB light chasing round the glass, through three fans, a graphics card bar and a front strip, and a drawing tablet with pen. Right = IT: a standard 16:9 monitor (1.6 x 0.9), a light grey office tower with a steady power light and a flickering drive light, a server rack under the right window (1.85 tall, below the sill) with a patch panel, twelve neat blue/yellow patch cables to a switch with blinking port lights, four 2U servers with drive bays and power/activity lights, a cable manager, and a white cable channel along the wall from the rack up the back of the desk. Both monitors still run the computer mode (same boot into /portfolio); the boot canvas now matches each monitor's shape (about 1790 x 768 on the left, 1366 x 768 on the right) so it is not stretched. New `src/room/world/DeskLights.ts` animates meshes with `userData.light` (`rgb` hue chase, `blink`, `steady`; still with reduced motion; dims with lights-out). The model is still called `retro` (GLB contract) but holds the two monitors. Roomba path re-checked against the rack and channel (0.15 clearance). NOT checked in a browser.
+- Sound removed (user request, 2026-11-13): `src/room/Audio.ts` and the `kai:mute` event are gone; the room is silent. `Roomba.motor` is kept in case sound comes back.
 
 ## Next step
 Nothing left that can be done without the user. Next is the browser check (checklist in `auto-dev/HANDOFF.md`, section 8), then the blocked items at the top of this file.

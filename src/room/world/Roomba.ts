@@ -31,7 +31,7 @@ function parsePath(data: unknown): RoombaPath | null {
  * for good if the file is missing or malformed.
  */
 export default class Roomba {
-  /** Motor level 0-1; the audio system reads this (step 10). */
+  /** Motor level 0-1 (was read by the room audio, now removed; kept for a future sound). */
   motor = 0;
 
   private pivot: THREE.Object3D;
@@ -60,7 +60,7 @@ export default class Roomba {
     void this.load(pathUrl);
   }
 
-  /** World position of the roomba's centre (the audio source follows it). */
+  /** World position of the roomba's centre. */
   getWorldPosition(target: THREE.Vector3): THREE.Vector3 {
     return this.pivot.getWorldPosition(target);
   }

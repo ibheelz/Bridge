@@ -31,6 +31,9 @@ const PUSH = { distance: 3.6, right: 0.9, up: 1.45, frame: 2.45 } as const;
 const CLOSE = { distance: 0.95, frame: 0.9 } as const;
 const DRIFT = { x: { speed: 0.0007, amount: 0.012 }, y: { speed: 0.0005, amount: 0.0072 } } as const;
 
+/** Boot canvas height in pixels; the width follows the monitor's aspect. */
+const BOOT_HEIGHT = 768;
+
 /** The CRT glass while the page arrives from the portfolio. */
 const ARRIVAL_SCREEN = '#0a0f0c';
 const POWERDOWN_HASH = '#powerdown';
@@ -96,6 +99,8 @@ export default class CRTMode {
   readonly computer: ComputerId;
   private screenName: ScreenName;
   private screen: THREE.Mesh;
+  /** Width over height of the monitor, so the boot canvas is not stretched (ultrawide left, 16:9 right). */
+  private screenAspect: number;
 
   /** Time spent in the current phase, and since the mode left `idle`. */
   private phaseTime = 0;
@@ -140,6 +145,8 @@ export default class CRTMode {
 
     const geo = getScreenGeo(screen, HOME_VIEW.target);
     const diagonal = geo.size.length();
+    // The screen faces along x or z; its width is the larger horizontal extent.
+    this.screenAspect = THREE.MathUtils.clamp(Math.max(geo.size.x, geo.size.z) / Math.max(geo.size.y, 0.01), 1, 3);
     this.screenCenter = geo.center;
     this.screenSide = Math.max(geo.size.x, geo.size.y, geo.size.z);
     // The right-hand desk mirrors the left one, so its sideways offset is mirrored too.
@@ -175,7 +182,7 @@ export default class CRTMode {
     this.target.copy(this.fromTarget);
 
     try {
-      this.boot = new BiosBoot();
+      this.boot = new BiosBoot(Math.round(BOOT_HEIGHT * this.screenAspect), BOOT_HEIGHT);
       this.world.liveScreens.set(this.screenName, this.boot);
     } catch (error) {
       // No 2D canvas: the camera move and the page change still happen.

@@ -15,6 +15,7 @@ import Door from './Door';
 import Roomba from './Roomba';
 import Screens, { type ScreensOptions } from './Screens';
 import Outdoors from './Outdoors';
+import DeskLights from './DeskLights';
 
 /**
  * Puts a RoomSource into the scene (analysis section 4.6).
@@ -39,6 +40,8 @@ export default class World {
   door: Door;
   /** Sky, ground, hills and trees around the room, coloured for the visitor's time of day. */
   outdoors: Outdoors;
+  /** RGB and status LEDs on the desks (meshes with `userData.light`). */
+  deskLights: DeskLights;
 
   private scene: THREE.Scene;
   private time: Time;
@@ -57,6 +60,7 @@ export default class World {
     this.outdoors = new Outdoors(source.groundY);
     this.root.add(this.outdoors.group);
 
+    const lights: THREE.Mesh[] = [];
     for (const name of MODEL_NAMES) {
       const group = source.models[name];
       const texture = source.textures[name];
@@ -66,8 +70,11 @@ export default class World {
         if (!(child instanceof THREE.Mesh)) return;
         // Without a bake, a mesh may ask for a clay colour of its own (the placeholder does).
         const tint = child.userData.clayColor as string | undefined;
+        // Lights that animate get their own material from DeskLights.
+        if (child.userData.light) {
+          lights.push(child);
         // Window glass: flagged in the placeholder, or named `windowGlass…` in a GLB. Faint, so the outside shows.
-        if (child.userData.windowGlass || child.name.startsWith('windowGlass')) {
+        } else if (child.userData.windowGlass || child.name.startsWith('windowGlass')) {
           child.material = this.outdoors.glass;
         } else {
           child.material = baked ?? (tint ? this.getTinted(tint) : this.getClay());
@@ -78,6 +85,7 @@ export default class World {
       this.root.add(group);
     }
 
+    this.deskLights = new DeskLights(lights);
     for (const mesh of Object.values(source.screens)) if (mesh) this.root.add(mesh);
     for (const [id, name] of Object.entries(COMPUTER_SCREENS) as [ComputerId, keyof RoomScreens][]) {
       const mesh = source.screens[name];
@@ -131,8 +139,10 @@ export default class World {
    * screen of the computer being used; the other one dims with the room.
    */
   setDim(room: number, crt: number, crtMesh: THREE.Mesh = this.screens.screenCRT): void {
+    this.deskLights.dim = room;
     this.root.traverse((child) => {
       if (!(child instanceof THREE.Mesh)) return;
+      if (child.userData.light) return; // DeskLights dims these itself
       const level = child === crtMesh ? crt : room;
       const material = child.material as THREE.Material | THREE.Material[];
       for (const m of Array.isArray(material) ? material : [material]) {
@@ -165,6 +175,7 @@ export default class World {
     this.liveScreens.update(this.time.delta);
     this.door.update(this.time.delta);
     this.outdoors.update(this.time.delta);
+    this.deskLights.update(this.time.elapsed);
   }
 
   destroy(): void {
@@ -186,5 +197,6 @@ export default class World {
     // The base clay may be unused when every mesh has its own colour.
     this.clay?.dispose();
     this.outdoors.destroy();
+    this.deskLights.destroy();
   }
 }

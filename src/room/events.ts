@@ -17,7 +17,6 @@ export const EVENTS = {
   tvMode: 'kai:tvmode',
   suite: 'kai:suite',
   suiteClose: 'kai:suite-close',
-  mute: 'kai:mute',
   sky: 'kai:sky',
 } as const;
 
@@ -59,10 +58,6 @@ export interface SkyDetail {
   horizon: string;
   /** The sun is well below the horizon: page chrome should switch to light ink. */
   night: boolean;
-}
-
-export interface MuteDetail {
-  muted: boolean;
 }
 
 export function emit(name: string, detail?: unknown): void {

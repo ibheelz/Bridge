@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { ModelName, RoomScreens, RoomSource, ScreenName } from '../assets';
+import type { LightSpec } from './DeskLights';
 
 /**
  * A box-and-cylinder stand-in for the real room, built in code.
@@ -68,14 +69,26 @@ const COLORS = {
   wall: '#ece7de',
   deskTop: '#8a5a3b',
   drawers: '#a87b55',
-  tower: '#3a3e45',
   keyboard: '#2c2f34',
   pot: '#c4643f',
   plant: '#5a9152',
   chairBase: '#2a2a2c',
   chairSeat: '#3f5f8f',
-  crt: '#d9d0ba',
-  crtFoot: '#bdb299',
+  monitor: '#17181b',
+  stand: '#2c2e33',
+  gamingCase: '#111215',
+  caseGlass: '#1d2230',
+  tablet: '#26282c',
+  officePc: '#c8cbd1',
+  rack: '#1b1d21',
+  cableManager: '#121417',
+  patchPanel: '#2c3036',
+  switch: '#353a40',
+  server: '#2a2d32',
+  driveBay: '#43474e',
+  cableBlue: '#3d7bd9',
+  cableYellow: '#e0b43a',
+  channel: '#e9eaec',
   mug: '#f6f3ec',
   rug: '#9fb0c8',
   console: '#6a4a33',
@@ -174,6 +187,8 @@ function screen(
 }
 
 const SCREEN_OFF = '#15161a';
+/** `screen()` under another name, for functions with a local called `screen`. */
+const makeScreen = screen;
 
 /**
  * A window in its opening in the back wall: frame lining the opening through
@@ -307,17 +322,12 @@ function desk(side: Side, F: number) {
     sideBox(side, [W, DESK_TOP - 0.15, -2.0], [W + 2.3, DESK_TOP, 4.3], COLORS.deskTop), // top
     sideBox(side, [W, F, -2.0], [W + 2.2, DESK_TOP - 0.15, -1.0], COLORS.drawers), // drawers, far end
     sideBox(side, [W, F, 3.3], [W + 2.2, DESK_TOP - 0.15, 4.3], COLORS.drawers), // drawers, near end
-    sideBox(side, [W + 0.4, DESK_TOP, 2.5], [W + 1.7, DESK_TOP + 1.25, 3.1], COLORS.tower), // tower
     sideBox(side, [W + 1.75, DESK_TOP, -0.55], [W + 2.15, DESK_TOP + 0.05, 0.6], COLORS.keyboard), // keyboard
     cylinder([sideX(side, W + 0.8), DESK_TOP, 3.75], 0.22, 0.35, COLORS.pot), // plant pot
     cylinder([sideX(side, W + 0.8), DESK_TOP + 0.35, 3.75], 0.07, 0.7, COLORS.plant), // plant stem
     // Chair base: the part that does not swivel.
     cylinder([chairX, F, CHAIR_Z], 0.5, 0.08, COLORS.chairBase),
     cylinder([chairX, F + 0.08, CHAIR_Z], 0.08, 1.12 - F - 0.08, COLORS.chairBase),
-  ];
-  const retro = [
-    sideBox(side, [W + 0.8, DESK_TOP, -0.45], [W + 1.6, DESK_TOP + 0.25, 0.5], COLORS.crtFoot), // foot
-    sideBox(side, [W + 0.45, DESK_TOP + 0.25, -0.78], [W + 1.74, DESK_TOP + 1.55, 0.83], COLORS.crt), // body
   ];
   // Seat and back; the back is on the side away from the desk.
   const seat = new THREE.Group();
@@ -331,16 +341,237 @@ function desk(side: Side, F: number) {
     mesh.position.sub(seat.position);
     seat.add(mesh);
   }
-  // Facing into the room: +x for the left desk, -x for the right.
-  const screenCenter: V3 = [sideX(side, W + 1.76), 3.145, 0.025];
-  const screenRotation: V3 = [0, side === 'left' ? Math.PI / 2 : -Math.PI / 2, 0];
-  return { workStation, retro, seat, screenCenter, screenRotation };
+  return { workStation, seat };
+}
+
+/** Marks a mesh as an animated light (DeskLights.ts). */
+function light(mesh: THREE.Mesh, spec: LightSpec): THREE.Mesh {
+  mesh.userData.light = spec;
+  return mesh;
+}
+
+/** Bends a geometry built facing +z so its left and right ends come forward by `sag` (a curved monitor). */
+function bend(geometry: THREE.BufferGeometry, width: number, sag: number): void {
+  const position = geometry.attributes.position;
+  for (let i = 0; i < position.count; i++) {
+    const t = (2 * position.getX(i)) / width;
+    position.setZ(i, position.getZ(i) + sag * t * t);
+  }
+  position.needsUpdate = true;
+}
+
+function placed(geometry: THREE.BufferGeometry, center: V3, rotation: V3): THREE.BufferGeometry {
+  return geometry.applyMatrix4(
+    new THREE.Matrix4().compose(
+      new THREE.Vector3(...center),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(...rotation)),
+      new THREE.Vector3(1, 1, 1),
+    ),
+  );
+}
+
+/** Monitors face into the room: +x on the left desk, -x on the right. */
+const FACE_LEFT: V3 = [0, Math.PI / 2, 0];
+const FACE_RIGHT: V3 = [0, -Math.PI / 2, 0];
+/** Monitor screen centres, in left-desk coordinates (x from the left wall). */
+const MONITOR_X = -HALF_X + 1.76;
+const DESIGN_SCREEN = { width: 2.4, height: 1.03, sag: 0.2, y: 3.2 } as const; // ~21:9, curved
+const IT_SCREEN = { width: 1.6, height: 0.9, y: 3.1 } as const; // 16:9, flat
+
+/**
+ * The left desk: motion design and animation. A curved ultrawide monitor, a
+ * gaming tower with RGB light chasing round its glass side and through three
+ * fans, and a drawing tablet next to the keyboard.
+ */
+function designSetup(): { workStation: THREE.Mesh[]; monitor: THREE.Mesh[]; screen: THREE.Mesh } {
+  const W = -HALF_X;
+  const D = DESK_TOP;
+  const { width, height, sag, y } = DESIGN_SCREEN;
+  const center: V3 = [MONITOR_X, y, 0.025];
+
+  // Curved screen: a bent plane. Normals stay flat (+z before turning), which is what getScreenGeo reads.
+  const screenGeometry = new THREE.PlaneGeometry(width, height, 48, 1);
+  const uv = screenGeometry.attributes.uv;
+  for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - uv.getY(i));
+  bend(screenGeometry, width, sag);
+  const screen = new THREE.Mesh(placed(screenGeometry, center, FACE_LEFT), new THREE.MeshBasicMaterial({ color: SCREEN_OFF }));
+  screen.name = 'screenCRT';
+
+  const housingGeometry = new THREE.BoxGeometry(width + 0.1, height + 0.1, 0.07, 48, 1, 1);
+  housingGeometry.translate(0, 0, -0.05);
+  bend(housingGeometry, width + 0.1, sag);
+  const housing = paint(new THREE.Mesh(placed(housingGeometry, center, FACE_LEFT), blank), COLORS.monitor);
+  const monitor = [
+    housing,
+    box([W + 1.3, D, -0.06], [W + 1.42, y - 0.05, 0.11], COLORS.stand), // neck
+    box([W + 1.36, y - 0.15, -0.06], [W + 1.7, y - 0.05, 0.11], COLORS.stand), // arm to the back of the screen
+    box([W + 1.05, D, -0.4], [W + 1.65, D + 0.03, 0.45], COLORS.stand), // foot
+  ];
+
+  // Gaming tower on the desk, glass side facing the room's front (+z).
+  const t = { x0: W + 0.35, x1: W + 1.75, y0: D, y1: D + 1.45, z0: 2.45, z1: 3.15 };
+  const glassZ = t.z1 + 0.01;
+  const rgb: THREE.Mesh[] = [];
+  // Light strip round the inside of the glass: segments with rising phase, so colour runs round it.
+  const inset = 0.12;
+  const corners: [number, number][] = [
+    [t.x0 + inset, t.y0 + inset],
+    [t.x1 - inset, t.y0 + inset],
+    [t.x1 - inset, t.y1 - inset],
+    [t.x0 + inset, t.y1 - inset],
+  ];
+  const perimeter = corners.reduce((sum, c, i) => {
+    const n = corners[(i + 1) % 4];
+    return sum + Math.hypot(n[0] - c[0], n[1] - c[1]);
+  }, 0);
+  const SEGMENT = 0.11;
+  let along = 0;
+  corners.forEach((c, i) => {
+    const n = corners[(i + 1) % 4];
+    const length = Math.hypot(n[0] - c[0], n[1] - c[1]);
+    const count = Math.max(1, Math.round(length / SEGMENT));
+    for (let k = 0; k < count; k++) {
+      const a = k / count;
+      const b = (k + 0.8) / count;
+      const p0 = [c[0] + (n[0] - c[0]) * a, c[1] + (n[1] - c[1]) * a];
+      const p1 = [c[0] + (n[0] - c[0]) * b, c[1] + (n[1] - c[1]) * b];
+      const half = 0.018;
+      rgb.push(
+        light(
+          box(
+            [Math.min(p0[0], p1[0]) - half, Math.min(p0[1], p1[1]) - half, glassZ],
+            [Math.max(p0[0], p1[0]) + half, Math.max(p0[1], p1[1]) + half, glassZ + 0.02],
+          ),
+          { kind: 'rgb', phase: (along + (length * a)) / perimeter },
+        ),
+      );
+    }
+    along += length;
+  });
+  // Three fans near the front of the case, a little out of step with each other.
+  for (const [i, fy] of [0.38, 0.75, 1.12].entries()) {
+    const fan = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.024, 8, 32), blank);
+    fan.position.set(t.x1 - 0.32, D + fy, glassZ + 0.02);
+    rgb.push(light(fan, { kind: 'rgb', phase: i * 0.12 }));
+  }
+  // Graphics card light bar, and a strip down the front edge.
+  rgb.push(light(box([t.x0 + 0.2, D + 0.6, glassZ], [t.x1 - 0.55, D + 0.66, glassZ + 0.02]), { kind: 'rgb', phase: 0.5 }));
+  for (let k = 0; k < 8; k++) {
+    const y0 = D + 0.12 + k * 0.155;
+    rgb.push(light(box([t.x1, y0, 2.75], [t.x1 + 0.015, y0 + 0.12, 2.85]), { kind: 'rgb', phase: k / 8 }));
+  }
+
+  const workStation = [
+    box([t.x0, t.y0, t.z0], [t.x1, t.y1, t.z1], COLORS.gamingCase),
+    box([t.x0 + 0.08, t.y0 + 0.08, t.z1], [t.x1 - 0.08, t.y1 - 0.08, glassZ], COLORS.caseGlass), // smoked glass side
+    ...rgb,
+    box([W + 1.6, D, 0.9], [W + 2.15, D + 0.03, 1.7], COLORS.tablet), // drawing tablet
+    box([W + 1.62, D + 0.03, 1.55], [W + 1.66, D + 0.05, 1.68], COLORS.stand), // pen
+  ];
+  return { workStation, monitor, screen };
+}
+
+/**
+ * The right desk: the IT side. A standard 16:9 monitor, a plain office tower
+ * with its status lights, and under the window a server rack: patch panel,
+ * neatly dressed patch cables, a switch with blinking port lights, four
+ * servers, and a cable channel running along the wall to the desk.
+ * Coordinates are written for the left wall and mirrored with `sideBox`.
+ */
+function itSetup(F: number): { workStation: THREE.Mesh[]; monitor: THREE.Mesh[]; screen: THREE.Mesh } {
+  const W = -HALF_X;
+  const D = DESK_TOP;
+  const r = (min: V3, max: V3, color?: string): THREE.Mesh => sideBox('right', min, max, color);
+  const { width, height, y } = IT_SCREEN;
+
+  const screen = makeScreen('screenCRT2', width, height, [-MONITOR_X, y, 0.025], FACE_RIGHT, SCREEN_OFF);
+  const monitor = [
+    r([W + 1.68, y - height / 2 - 0.05, -width / 2 - 0.05], [W + 1.75, y + height / 2 + 0.05, width / 2 + 0.05], COLORS.monitor), // bezel
+    r([W + 1.3, D, -0.06], [W + 1.42, y - 0.1, 0.11], COLORS.stand), // neck
+    r([W + 1.36, y - 0.2, -0.06], [W + 1.69, y - 0.1, 0.11], COLORS.stand), // arm
+    r([W + 1.05, D, -0.4], [W + 1.65, D + 0.03, 0.45], COLORS.stand), // foot
+  ];
+
+  // Office tower on the desk; power light steady, drive light flickering, on the front (room side).
+  const pc = { x0: W + 0.4, x1: W + 1.6, y1: D + 1.1, z0: 2.5, z1: 3.0 };
+  const pcFront = [
+    light(r([pc.x1, D + 0.95, 2.62], [pc.x1 + 0.015, D + 0.99, 2.66]), { kind: 'steady', on: '#4aa8ff' }),
+    light(r([pc.x1, D + 0.95, 2.7], [pc.x1 + 0.015, D + 0.99, 2.74]), { kind: 'blink', seed: 3, on: '#ffb347' }),
+  ];
+
+  // Server rack on the floor under the window, its front facing the room (+z).
+  const rack = { x0: W + 0.2, x1: W + 2.0, y0: F, y1: F + 1.85, z0: -4.55, z1: -3.3 };
+  const front = rack.z1;
+  const U = 0.12; // one rack unit
+  const ix0 = rack.x0 + 0.12; // inside the rails
+  const ix1 = rack.x1 - 0.22; // leaves room for the cable manager on the right
+  const rackParts: THREE.Mesh[] = [
+    r([rack.x0, rack.y0, rack.z0], [rack.x1, rack.y1, rack.z1], COLORS.rack),
+    r([rack.x1 - 0.18, rack.y0 + 0.08, front], [rack.x1 - 0.06, rack.y1 - 0.08, front + 0.06], COLORS.cableManager),
+  ];
+  let top = rack.y1 - 0.1;
+  const slot = (units: number): [number, number] => {
+    const y1 = top;
+    top -= units * U;
+    return [top + 0.01, y1 - 0.01];
+  };
+  // Patch panel, then the switch below it; twelve short cables run straight down between them.
+  const [pp0, pp1] = slot(1);
+  const [sw0, sw1] = slot(1);
+  rackParts.push(r([ix0, pp0, front], [ix1, pp1, front + 0.03], COLORS.patchPanel));
+  rackParts.push(r([ix0, sw0, front], [ix1, sw1, front + 0.03], COLORS.switch));
+  const PORTS = 12;
+  for (let p = 0; p < PORTS; p++) {
+    const x = ix0 + 0.1 + (p * (ix1 - ix0 - 0.2)) / (PORTS - 1);
+    rackParts.push(
+      r([x - 0.012, (sw0 + sw1) / 2, front + 0.03], [x + 0.012, (pp0 + pp1) / 2, front + 0.05], p % 2 ? COLORS.cableYellow : COLORS.cableBlue),
+      light(r([x - 0.015, sw0 + 0.012, front + 0.03], [x + 0.015, sw0 + 0.032, front + 0.04]), {
+        kind: 'blink',
+        seed: 10 + p,
+        on: '#3ddc84',
+      }),
+    );
+  }
+  slot(0.5); // a little space
+  // Four 2U servers, each with drive bays, a steady power light and a flickering activity light.
+  for (let s = 0; s < 4; s++) {
+    const [s0, s1] = slot(2);
+    rackParts.push(r([ix0, s0, front], [ix1, s1, front + 0.03], COLORS.server));
+    for (let b = 0; b < 4; b++) {
+      const bx = ix0 + 0.08 + b * 0.22;
+      rackParts.push(r([bx, s0 + 0.04, front + 0.03], [bx + 0.18, s1 - 0.04, front + 0.04], COLORS.driveBay));
+    }
+    rackParts.push(
+      light(r([ix1 - 0.12, s1 - 0.06, front + 0.03], [ix1 - 0.09, s1 - 0.03, front + 0.04]), { kind: 'steady', on: '#3ddc84' }),
+      light(r([ix1 - 0.07, s1 - 0.06, front + 0.03], [ix1 - 0.04, s1 - 0.03, front + 0.04]), {
+        kind: 'blink',
+        seed: 40 + s,
+        on: '#4aa8ff',
+      }),
+    );
+  }
+
+  // White cable channel: along the wall at floor level from the rack, then up the back of the desk drawers.
+  const channel = [
+    r([W + 0.02, F, rack.z1], [W + 0.14, F + 0.1, -2.12], COLORS.channel),
+    r([W + 0.02, F, -2.12], [W + 0.14, D - 0.15, -2.0], COLORS.channel),
+  ];
+
+  const workStation = [
+    r([pc.x0, D, pc.z0], [pc.x1, pc.y1, pc.z1], COLORS.officePc),
+    ...pcFront,
+    ...rackParts,
+    ...channel,
+  ];
+  return { workStation, monitor, screen };
 }
 
 export function createPlaceholderRoom(): RoomSource {
   const F = FLOOR_Y;
   const left = desk('left', F);
   const right = desk('right', F);
+  const design = designSetup();
+  const it = itSetup(F);
 
   // --- Shell: floor slab and the three walls -------------------------------
   const roomModel = model('roomModel', [0, F, 0], [
@@ -355,9 +586,12 @@ export function createPlaceholderRoom(): RoomSource {
   const workStation = model('workStation', [-HALF_X + 1.15, F, 1.15], [
     ...left.workStation,
     ...right.workStation,
+    ...design.workStation,
+    ...it.workStation,
     cylinder(MUG, 0.12, MUG_HEIGHT, COLORS.mug),
   ]);
-  const retro = model('retro', [-HALF_X + 1.25, DESK_TOP, 0.025], [...left.retro, ...right.retro]);
+  // `retro` keeps its model name (the GLB contract); it now holds both monitors.
+  const retro = model('retro', [MONITOR_X, DESK_TOP, 0.025], [...design.monitor, ...it.monitor]);
 
   // --- Chair seats: one swivel node each (ChairTop turns every child) -----
   const chairTop = new THREE.Group();
@@ -427,8 +661,9 @@ export function createPlaceholderRoom(): RoomSource {
   const doorFront = door.z + door.thickness / 2 + 0.01;
   const screens: RoomScreens = {
     // 1.21 x 0.91, about 4:3. Left faces +x, right faces -x.
-    screenCRT: screen('screenCRT', 1.21, 0.91, left.screenCenter, left.screenRotation, SCREEN_OFF),
-    screenCRT2: screen('screenCRT2', 1.21, 0.91, right.screenCenter, right.screenRotation, SCREEN_OFF),
+    // Left: the curved design monitor. Right: the standard IT monitor.
+    screenCRT: design.screen,
+    screenCRT2: it.screen,
     // Faces +z, on the back wall.
     screenTV: screen(
       'screenTV',
