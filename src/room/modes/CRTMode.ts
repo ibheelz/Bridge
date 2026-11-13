@@ -26,10 +26,15 @@ const SCREEN_ON_AFTER_MS = 5000;
 /** A click only skips or leaves once the mode is this old, so the click that started it does not count. */
 const CLICK_GUARD_MS = 600;
 
-/** Camera poses, relative to the CRT screen. */
-const PUSH = { distance: 3.6, right: 0.9, up: 1.45, frame: 2.45 } as const;
+/**
+ * Camera poses, relative to the monitor's screen. The pushed-in pose is
+ * straight in front of the screen, level with its centre (user request: the
+ * screen faces you flat, like 2D, no angle), and holds still: no drift.
+ * The spec's pose sat 0.9 to the side and 1.45 above, with a slight sway.
+ */
+const PUSH = { distance: 3.6, right: 0, up: 0, frame: 2.45 } as const;
 const CLOSE = { distance: 0.95, frame: 0.9 } as const;
-const DRIFT = { x: { speed: 0.0007, amount: 0.012 }, y: { speed: 0.0005, amount: 0.0072 } } as const;
+const DRIFT = { x: { speed: 0.0007, amount: 0 }, y: { speed: 0.0005, amount: 0 } } as const;
 
 /** Boot canvas height in pixels; the width follows the monitor's aspect. */
 const BOOT_HEIGHT = 768;
