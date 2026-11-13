@@ -25,6 +25,8 @@ const tvFile = fs.existsSync(screensDir)
   : undefined;
 const tvVideo = tvFile ? `${base}assets/screens/${encodeURIComponent(tvFile)}` : undefined;
 const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
+const pageTitle = 'Abiola Adeyeye';
+const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://abioladeyeye.com').href;
 ---
 <html lang="en">
   <head>
@@ -33,7 +35,14 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
-    <title>Abiola Adeyeye</title>
+    <title>{pageTitle}</title>
+    <meta name="description" content="Placeholder description of the 3D room portfolio." />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content="Placeholder description of the 3D room portfolio." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary" />
     <script is:inline>
       // Coming back from the portfolio: start under black, before anything paints.
       if (location.hash === '#powerdown') document.documentElement.classList.add('is-powerdown');
