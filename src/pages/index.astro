@@ -25,7 +25,7 @@ const tvFile = fs.existsSync(screensDir)
   : undefined;
 const tvVideo = tvFile ? `${base}assets/screens/${encodeURIComponent(tvFile)}` : undefined;
 const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
-const pageTitle = "Abiola's Room";
+const pageTitle = "Abiola's Office";
 const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://abioladeyeye.com').href;
 ---
 <html lang="en">
