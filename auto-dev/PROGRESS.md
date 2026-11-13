@@ -193,7 +193,9 @@ Build the room procedurally in code behind the same interfaces the GLB loader wi
 
 - IT desk extended (user request, 2026-11-13): the right desk now runs to the back wall (its far drawers moved to the back end), and the rack sits on it at that end: a compact half-width rack (1.0 wide, 1.0 tall) against the side wall with a patch panel, eight patch cables, a switch with eight blinking port lights and two 2U servers. The floor rack and the wall cable channel are gone. The rack covers a small lower-right corner of the right window (about 0.3 wide, up to y 3.3). Roomba path still clear.
 
-- Portrait monitor (user request, 2026-11-13): a 0.9 x 1.6 vertical monitor stands beside the IT monitor, on the room-front side (centre z 1.4), bottoms level, own stand. Decorative: unlit dark screen, not clickable, no content yet.
+- Portrait monitor beside the IT monitor: added, then removed again at the user's request (2026-11-13).
+
+- Desk mats (user request, 2026-11-13): a long patterned mat under each keyboard. Design desk: charcoal with a dot grid and flowing teal lines (z -1.5 to 0.8, the tablet sits beyond it). IT desk: deep navy with circuit traces and pads in muted blue (z -1.4 to 1.4). Patterns are drawn on canvases in `PlaceholderRoom.ts` (`MAT_STYLES`); the mats keep their own lit material (`userData.ownMaterial`, which World now leaves alone). Colours chosen dark and muted so they do not fight the walnut desks, the RGB or the status lights.
 
 ## Next step
 Nothing left that can be done without the user. Next is the browser check (checklist in `auto-dev/HANDOFF.md`, section 8), then the blocked items at the top of this file.

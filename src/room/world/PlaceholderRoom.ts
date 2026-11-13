@@ -338,6 +338,101 @@ function desk(side: Side, F: number) {
   return { workStation, seat };
 }
 
+/**
+ * A long desk mat with a printed pattern, drawn on a canvas (256 x 1024: the
+ * long side runs along the desk). Muted, dark colours, so they sit under the
+ * walnut desk, the RGB and the status lights without fighting them.
+ */
+const MAT_STYLES = {
+  // Design desk: charcoal with a dot grid and soft flowing lines (motion curves) in muted teal.
+  design: { base: '#23262c', dots: '#2e333b', lines: '#3d6a72', border: '#383d46' },
+  // IT desk: deep navy with circuit-board traces and pads in muted blue.
+  it: { base: '#1b2230', traces: '#2e4466', pads: '#3a5682', border: '#2a3445' },
+} as const;
+
+function deskMatTexture(kind: keyof typeof MAT_STYLES): THREE.CanvasTexture | null {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 1024;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  const w = canvas.width;
+  const h = canvas.height;
+  const style = MAT_STYLES[kind];
+  ctx.fillStyle = style.base;
+  ctx.fillRect(0, 0, w, h);
+
+  if (kind === 'design') {
+    const s = MAT_STYLES.design;
+    ctx.fillStyle = s.dots;
+    for (let y = 12; y < h; y += 24) for (let x = 12; x < w; x += 24) ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
+    ctx.strokeStyle = s.lines;
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 5; i++) {
+      ctx.beginPath();
+      for (let y = 0; y <= h; y += 8) {
+        const x = w * (0.2 + i * 0.15) + Math.sin(y * 0.012 + i * 0.9) * 30;
+        if (y === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+  } else {
+    const s = MAT_STYLES.it;
+    let seed = 5;
+    const random = (): number => {
+      seed = (seed * 16807) % 2147483647;
+      return (seed - 1) / 2147483646;
+    };
+    ctx.strokeStyle = s.traces;
+    ctx.lineWidth = 3;
+    ctx.fillStyle = s.pads;
+    for (let i = 0; i < 26; i++) {
+      // A trace: straight run, a 45-degree jog, straight run, with a pad at each end.
+      let x = 20 + Math.round(random() * 9) * 24;
+      let y = Math.round(random() * 40) * 24;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      const pads: [number, number][] = [[x, y]];
+      y += 48 + random() * 120;
+      ctx.lineTo(x, y);
+      const jog = (random() < 0.5 ? -1 : 1) * 24;
+      x += jog;
+      y += Math.abs(jog);
+      ctx.lineTo(x, y);
+      y += 30 + random() * 90;
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      pads.push([x, y]);
+      for (const [px, py] of pads) {
+        ctx.beginPath();
+        ctx.arc(px, py, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  ctx.strokeStyle = style.border;
+  ctx.lineWidth = 6;
+  ctx.strokeRect(5, 5, w - 10, h - 10);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
+}
+
+/** A thin mat on the desk top; keeps its own (patterned, lit) material. */
+function deskMat(min: V3, max: V3, kind: keyof typeof MAT_STYLES): THREE.Mesh {
+  const mesh = box(min, max, MAT_STYLES[kind].base);
+  const texture = deskMatTexture(kind);
+  if (texture) {
+    mesh.material = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.95 });
+    mesh.userData.ownMaterial = true;
+  }
+  return mesh;
+}
+
 /** Marks a mesh as an animated light (DeskLights.ts). */
 function light(mesh: THREE.Mesh, spec: LightSpec): THREE.Mesh {
   mesh.userData.light = spec;
@@ -459,6 +554,7 @@ function designSetup(): { workStation: THREE.Mesh[]; monitor: THREE.Mesh[]; scre
     box([t.x0, t.y0, t.z0], [t.x1, t.y1, t.z1], COLORS.gamingCase),
     box([t.x0 + 0.08, t.y0 + 0.08, t.z1], [t.x1 - 0.08, t.y1 - 0.08, glassZ], COLORS.caseGlass), // smoked glass side
     ...rgb,
+    deskMat([W + 1.7, D, -1.5], [W + 2.25, D + 0.012, 0.8], 'design'), // long mat under the keyboard
     box([W + 1.6, D, 0.9], [W + 2.15, D + 0.03, 1.7], COLORS.tablet), // drawing tablet
     box([W + 1.62, D + 0.03, 1.55], [W + 1.66, D + 0.05, 1.68], COLORS.stand), // pen
   ];
@@ -466,8 +562,7 @@ function designSetup(): { workStation: THREE.Mesh[]; monitor: THREE.Mesh[]; scre
 }
 
 /**
- * The right desk: the IT side. A standard 16:9 monitor with a portrait
- * monitor beside it, a plain office tower
+ * The right desk: the IT side. A standard 16:9 monitor, a plain office tower
  * with its status lights, and on the desk's far end (the desk runs to the
  * back wall on this side) a compact rack: patch panel, neatly dressed patch
  * cables, a switch with blinking port lights and two servers.
@@ -486,19 +581,6 @@ function itSetup(): { workStation: THREE.Mesh[]; monitor: THREE.Mesh[]; screen: 
     r([W + 1.36, y - 0.2, -0.06], [W + 1.69, y - 0.1, 0.11], COLORS.stand), // arm
     r([W + 1.05, D, -0.4], [W + 1.65, D + 0.03, 0.45], COLORS.stand), // foot
   ];
-
-  // A second, portrait monitor beside it (toward the room's front), bottoms level.
-  // Decorative only: its screen is plain dark glass and it does not open anything.
-  const v = { width: 0.9, height: 1.6, z: 1.4 };
-  const vBottom = y - height / 2;
-  const vTop = vBottom + v.height;
-  monitor.push(
-    r([W + 1.68, vBottom - 0.05, v.z - v.width / 2 - 0.05], [W + 1.75, vTop + 0.05, v.z + v.width / 2 + 0.05], COLORS.monitor), // bezel
-    light(r([W + 1.75, vBottom, v.z - v.width / 2], [W + 1.76, vTop, v.z + v.width / 2]), { kind: 'steady', on: '#0f1522' }), // screen
-    r([W + 1.3, D, v.z - 0.08], [W + 1.42, vBottom + 0.3, v.z + 0.08], COLORS.stand), // neck
-    r([W + 1.36, vBottom + 0.2, v.z - 0.08], [W + 1.69, vBottom + 0.3, v.z + 0.08], COLORS.stand), // arm
-    r([W + 1.05, D, v.z - 0.3], [W + 1.65, D + 0.03, v.z + 0.3], COLORS.stand), // foot
-  );
 
   // Office tower on the desk; power light steady, drive light flickering, on the front (room side).
   const pc = { x0: W + 0.4, x1: W + 1.6, y1: D + 1.1, z0: 2.5, z1: 3.0 };
@@ -562,6 +644,7 @@ function itSetup(): { workStation: THREE.Mesh[]; monitor: THREE.Mesh[]; screen: 
   }
 
   const workStation = [
+    deskMat([-(W + 2.25), D, -1.4], [-(W + 1.7), D + 0.012, 1.4], 'it'), // long mat under the keyboard
     r([pc.x0, D, pc.z0], [pc.x1, pc.y1, pc.z1], COLORS.officePc),
     ...pcFront,
     ...rackParts,

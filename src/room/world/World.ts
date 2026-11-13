@@ -73,6 +73,9 @@ export default class World {
         // Lights that animate get their own material from DeskLights.
         if (child.userData.light) {
           lights.push(child);
+        // A mesh that brings its own material (the placeholder's patterned desk mats) keeps it.
+        } else if (child.userData.ownMaterial) {
+          // leave as built
         // Window glass: flagged in the placeholder, or named `windowGlass…` in a GLB. Faint, so the outside shows.
         } else if (child.userData.windowGlass || child.name.startsWith('windowGlass')) {
           child.material = this.outdoors.glass;
