@@ -70,6 +70,108 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
         inset: 0;
         z-index: 2;
       }
+      /* Edge words (section 10). Text at z 1 behind the transparent canvas (z 2); proxies at z 6 take the clicks. */
+      .edge-word {
+        position: absolute;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        text-align: center;
+        color: #2d2b28;
+        font: 14px/1.2 ui-sans-serif, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 1.6s ease, color 0.4s ease;
+      }
+      .edge-word__word {
+        letter-spacing: 0.35em;
+        margin-right: -0.35em;
+        text-transform: lowercase;
+      }
+      .edge-word__year {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.25em;
+        margin-right: -0.25em;
+        color: #6b6760;
+      }
+      .edge-word__role,
+      .edge-word__sub {
+        font-size: 11px;
+        color: #8a867f;
+        transition: opacity 0.45s ease;
+      }
+      .edge-word__sub {
+        font-style: italic;
+        letter-spacing: 0.2em;
+        margin-right: -0.2em;
+      }
+      .edge-word--left,
+      .edge-word--right {
+        top: 50%;
+      }
+      .edge-word--left {
+        left: 14%;
+        transform: translate(-50%, -50%);
+      }
+      .edge-word--right {
+        right: 14%;
+        transform: translate(50%, -50%);
+      }
+      .edge-word--top {
+        top: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      .edge-word--corners .edge-word--left,
+      .edge-word--corners .edge-word--right {
+        top: auto;
+        bottom: calc(18px + env(safe-area-inset-bottom));
+        transform: none;
+      }
+      .edge-word--corners .edge-word--left {
+        left: calc(24px + env(safe-area-inset-left));
+        align-items: flex-start;
+      }
+      .edge-word--corners .edge-word--right {
+        right: calc(24px + env(safe-area-inset-right));
+        align-items: flex-end;
+      }
+      .edge-words-in .edge-word { opacity: 1; }
+      .edge-words-in .edge-word--left { opacity: 0.75; }
+      .edge-words-in .edge-word--left.is-hot { opacity: 1; }
+      .edge-words-hidden .edge-word,
+      .edge-words-hidden .edge-word--left.is-hot {
+        opacity: 0;
+        transition-duration: 0.4s;
+      }
+      .edge-word--lumaflip,
+      .edge-word--lumaflip .edge-word__year,
+      .edge-word--lumaflip .edge-word__role,
+      .edge-word--lumaflip .edge-word__sub {
+        color: #f2efe9;
+      }
+      button.edge-word {
+        z-index: 6;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: transparent;
+        opacity: 1;
+        pointer-events: auto;
+        cursor: pointer;
+      }
+      .edge-words-in button.edge-word { opacity: 1; }
+      button.edge-word:disabled { pointer-events: none; cursor: default; }
+      button.edge-word:focus { outline: none; }
+      button.edge-word:focus-visible {
+        outline: 2px solid #2d2b28;
+        outline-offset: 6px;
+        border-radius: 4px;
+      }
       /* Spec colours are near-white on a near-white page; ink is used instead. */
       .loading {
         position: absolute;
@@ -221,6 +323,21 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
             data-portfolio={`${base}portfolio/`}
           >
           </div>
+          <span class="edge-word edge-word--left" data-luma="portfolio">
+            <span class="edge-word__year">(year)</span>
+            <span class="edge-word__word">placeholder left</span>
+          </span>
+          <button class="edge-word edge-word--left edge-word--proxy" type="button" aria-label="Open the computer" disabled></button>
+          <span class="edge-word edge-word--right" data-luma="software">
+            <span class="edge-word__year">(year)</span>
+            <span class="edge-word__word">placeholder right</span>
+            <span class="edge-word__sub">coming soon</span>
+          </span>
+          <span class="edge-word edge-word--top" data-luma="wordmark">
+            <span class="edge-word__word">placeholder name</span>
+            <span class="edge-word__role" aria-live="off">placeholder role one</span>
+          </span>
+          <button class="edge-word edge-word--top edge-word--roleproxy" type="button" aria-label="Next role" disabled></button>
           {
             hasRoom && (
               <div class="loading" role="progressbar" aria-label="Loading room" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
@@ -260,8 +377,11 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
       import Experience from '../room/Experience';
       import { initLoading } from '../ui/loading';
       import { initSuite } from '../ui/suite';
+      import { initLabels } from '../ui/labels';
+      import { initRoomRect } from '../ui/roomRect';
 
       initSuite(document.querySelector<HTMLElement>('.suite'));
+      initLabels(document.querySelector<HTMLElement>('.room-experience'));
       const target = document.getElementById('room');
       if (target) {
         const experience = new Experience({
@@ -272,6 +392,7 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
           portfolioUrl: target.dataset.portfolio,
         });
         initLoading(document.querySelector<HTMLElement>('.loading'), experience.resources);
+        initRoomRect(experience);
       }
     </script>
   </body>
