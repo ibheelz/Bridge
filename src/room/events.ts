@@ -16,6 +16,9 @@ export const EVENTS = {
   suite: 'kai:suite',
   suiteClose: 'kai:suite-close',
   roomRect: 'kai:room-rect',
+  textLuma: 'kai:text-luma',
+  mute: 'kai:mute',
+  introOpen: 'kai:intro-open',
 } as const;
 
 /** Detail of `kai:tvmode` and `kai:suite`. */
@@ -53,6 +56,19 @@ export interface RoomRectDetail {
   bottom: number;
   viewportWidth: number;
   viewportHeight: number;
+}
+
+/** Detail of `kai:text-luma`: what the canvas looks like under one `[data-luma]` label. */
+export interface TextLumaDetail {
+  id: string;
+  /** The room behind is dark enough that the label needs light ink. */
+  light: boolean;
+  /** The room is drawn over the label. */
+  covered: boolean;
+}
+
+export interface MuteDetail {
+  muted: boolean;
 }
 
 export function emit(name: string, detail?: unknown): void {

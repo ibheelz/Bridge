@@ -14,6 +14,11 @@ export default class Renderer {
   instance: THREE.WebGLRenderer;
   /** Set while a mode renders through an effect composer; the output is then opaque. */
   post: PostChain | null = null;
+  /**
+   * Called right after each render, while the drawing buffer still holds the
+   * frame (the luma probe reads pixels here; `preserveDrawingBuffer` stays off).
+   */
+  afterRender: Array<() => void> = [];
 
   private sizes: Sizes;
   private scene: THREE.Scene;
@@ -57,9 +62,11 @@ export default class Renderer {
   render(): void {
     if (this.post) this.post.render();
     else this.instance.render(this.scene, this.camera.instance);
+    for (const callback of this.afterRender) callback();
   }
 
   destroy(): void {
+    this.afterRender.length = 0;
     this.instance.dispose();
     this.instance.domElement.remove();
   }

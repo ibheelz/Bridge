@@ -1,11 +1,5 @@
-import {
-  EVENTS,
-  emit,
-  type ActiveDetail,
-  type CrtModeDetail,
-  type HoverDetail,
-  type RoomRectDetail,
-} from '../room/events';
+import { EVENTS, emit, type HoverDetail, type RoomRectDetail, type TextLumaDetail } from '../room/events';
+import { onModeChange } from './modeWatch';
 
 /** Placeholder roles for the top label; the real ones are the user's to write. */
 const ROLES = ['placeholder role one', 'placeholder role two', 'placeholder role three'];
@@ -22,7 +16,8 @@ const MIN_OFFSET_PX = 60;
  * The edge words around the room (analysis section 10, "Edge words"). They sit
  * behind the transparent canvas; invisible proxy buttons above the canvas take
  * the clicks. Positions follow `kai:room-rect`; all labels hide while a camera
- * mode runs. `kai:text-luma` handling is added in step 9b.
+ * mode runs, and
+ * `kai:text-luma` flips the ink to light or lets clicks through to the room.
  */
 export function initLabels(root: HTMLElement | null): void {
   if (!root) return;
@@ -73,27 +68,35 @@ export function initLabels(root: HTMLElement | null): void {
   });
   document.fonts?.ready.then(fitProxies).catch(() => {});
 
-  // --- Hide during modes ---------------------------------------------------
-  const modes = { crt: false, tv: false, suite: false };
-  /** Proxies a covered label has given up (step 9b); kept apart from the mode rule. */
+  // --- Hide during modes, and give way where the room covers a label -------
+  let hidden = false;
+  /** Proxies whose label the room is drawn over (`kai:text-luma`); clicks then go to the room. */
   const covered = new Set<HTMLButtonElement>();
   const applyModes = (): void => {
-    const hidden = modes.crt || modes.tv || modes.suite;
     root.classList.toggle('edge-words-hidden', hidden);
     const live = root.classList.contains('edge-words-in');
     for (const proxy of proxies) proxy.disabled = !live || hidden || covered.has(proxy);
   };
-  window.addEventListener(EVENTS.crtMode, (event) => {
-    modes.crt = (event as CustomEvent<CrtModeDetail>).detail?.phase !== 'idle';
+  onModeChange((active) => {
+    hidden = active;
     applyModes();
   });
-  window.addEventListener(EVENTS.tvMode, (event) => {
-    modes.tv = Boolean((event as CustomEvent<ActiveDetail>).detail?.active);
-    applyModes();
-  });
-  window.addEventListener(EVENTS.suite, (event) => {
-    modes.suite = Boolean((event as CustomEvent<ActiveDetail>).detail?.active);
-    applyModes();
+
+  const byId: Record<string, { label: HTMLElement | null; proxy: HTMLButtonElement | null }> = {
+    portfolio: { label: left, proxy: leftProxy },
+    software: { label: right, proxy: null },
+    wordmark: { label: top, proxy: roleProxy },
+  };
+  window.addEventListener(EVENTS.textLuma, (event) => {
+    const detail = (event as CustomEvent<TextLumaDetail>).detail;
+    const entry = detail && byId[detail.id];
+    if (!entry) return;
+    entry.label?.classList.toggle('edge-word--lumaflip', detail.light);
+    if (entry.proxy) {
+      if (detail.covered) covered.add(entry.proxy);
+      else covered.delete(entry.proxy);
+      applyModes();
+    }
   });
 
   // --- Left label: hover hint and keyboard route into the computer ----------
