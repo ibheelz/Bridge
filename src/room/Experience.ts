@@ -11,6 +11,7 @@ import Interactions from './world/Interactions';
 import CRTMode from './modes/CRTMode';
 import SuiteMode from './modes/SuiteMode';
 import TVMode from './modes/TVMode';
+import RoomAudio from './Audio';
 import { createBaseGroup } from './assets';
 import { createLoadedRoom } from './world/LoadedRoom';
 import { createPlaceholderRoom } from './world/PlaceholderRoom';
@@ -58,6 +59,8 @@ export default class Experience {
   /** The laptop close-up with its HTML panel, and the TV view; exist once `world` does. */
   suiteMode: SuiteMode | null = null;
   tvMode: TVMode | null = null;
+  /** Synthesized room sound; starts on the first user gesture (section 9). Exists once `world` does. */
+  audio: RoomAudio | null = null;
 
   private tvVideo?: string;
   private portfolioUrl!: string;
@@ -115,6 +118,7 @@ export default class Experience {
       { ...shared, renderer: this.renderer, scene: this.scene },
       this.world.screens.screenTV,
     );
+    this.audio = new RoomAudio(this.camera, this.navigation, this.world);
   }
 
   /** True while any cinematic mode has the camera; only one runs at a time. */
@@ -127,7 +131,7 @@ export default class Experience {
     this.renderer.resize();
   }
 
-  /** Frame order follows section 4.1; a mode writes the camera before the render. Audio slots in later. */
+  /** Frame order follows section 4.1; a mode writes the camera before the render, audio reads it last. */
   private update(): void {
     this.camera.update();
     this.crtMode?.update();
@@ -136,6 +140,7 @@ export default class Experience {
     this.renderer.render();
     this.world?.update();
     this.navigation.update();
+    this.audio?.update();
   }
 
   destroy(): void {
@@ -143,6 +148,8 @@ export default class Experience {
     this.sizes.destroy();
     this.resources.destroy();
     this.navigation.destroy();
+    this.audio?.destroy();
+    this.audio = null;
     this.crtMode?.destroy();
     this.crtMode = null;
     this.suiteMode?.destroy();

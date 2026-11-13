@@ -60,6 +60,11 @@ export default class Roomba {
     void this.load(pathUrl);
   }
 
+  /** World position of the roomba's centre (the audio source follows it). */
+  getWorldPosition(target: THREE.Vector3): THREE.Vector3 {
+    return this.pivot.getWorldPosition(target);
+  }
+
   private async load(url: string): Promise<void> {
     try {
       const response = await fetch(url);
