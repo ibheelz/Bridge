@@ -466,7 +466,8 @@ function designSetup(): { workStation: THREE.Mesh[]; monitor: THREE.Mesh[]; scre
 }
 
 /**
- * The right desk: the IT side. A standard 16:9 monitor, a plain office tower
+ * The right desk: the IT side. A standard 16:9 monitor with a portrait
+ * monitor beside it, a plain office tower
  * with its status lights, and on the desk's far end (the desk runs to the
  * back wall on this side) a compact rack: patch panel, neatly dressed patch
  * cables, a switch with blinking port lights and two servers.
@@ -485,6 +486,19 @@ function itSetup(): { workStation: THREE.Mesh[]; monitor: THREE.Mesh[]; screen: 
     r([W + 1.36, y - 0.2, -0.06], [W + 1.69, y - 0.1, 0.11], COLORS.stand), // arm
     r([W + 1.05, D, -0.4], [W + 1.65, D + 0.03, 0.45], COLORS.stand), // foot
   ];
+
+  // A second, portrait monitor beside it (toward the room's front), bottoms level.
+  // Decorative only: its screen is plain dark glass and it does not open anything.
+  const v = { width: 0.9, height: 1.6, z: 1.4 };
+  const vBottom = y - height / 2;
+  const vTop = vBottom + v.height;
+  monitor.push(
+    r([W + 1.68, vBottom - 0.05, v.z - v.width / 2 - 0.05], [W + 1.75, vTop + 0.05, v.z + v.width / 2 + 0.05], COLORS.monitor), // bezel
+    light(r([W + 1.75, vBottom, v.z - v.width / 2], [W + 1.76, vTop, v.z + v.width / 2]), { kind: 'steady', on: '#0f1522' }), // screen
+    r([W + 1.3, D, v.z - 0.08], [W + 1.42, vBottom + 0.3, v.z + 0.08], COLORS.stand), // neck
+    r([W + 1.36, vBottom + 0.2, v.z - 0.08], [W + 1.69, vBottom + 0.3, v.z + 0.08], COLORS.stand), // arm
+    r([W + 1.05, D, v.z - 0.3], [W + 1.65, D + 0.03, v.z + 0.3], COLORS.stand), // foot
+  );
 
   // Office tower on the desk; power light steady, drive light flickering, on the front (room side).
   const pc = { x0: W + 0.4, x1: W + 1.6, y1: D + 1.1, z0: 2.5, z1: 3.0 };
