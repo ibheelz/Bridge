@@ -38,7 +38,7 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
       // Coming back from the portfolio: start under black, before anything paints.
       if (location.hash === '#powerdown') document.documentElement.classList.add('is-powerdown');
     </script>
-    <noscript><style>.overlay, .edge-word { display: none; }</style></noscript>
+    <noscript><style>.overlay, .edge-word, .room-keys { display: none; }</style></noscript>
     <style is:global>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html, body {
@@ -246,6 +246,31 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
       .no-webgl .fallback { display: block; }
       .no-webgl .overlay,
       .no-webgl .edge-word { display: none; }
+      /* Keyboard routes to the laptop and TV: hidden until focused (section 13.4). */
+      .room-keys__button {
+        position: absolute;
+        left: 50%;
+        bottom: calc(18px + env(safe-area-inset-bottom));
+        z-index: 7;
+        transform: translateX(-50%);
+        padding: 10px 16px;
+        border: 0;
+        border-radius: 8px;
+        background: #2d2b28;
+        color: #f2efe9;
+        font: 13px/1 ui-sans-serif, system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+        letter-spacing: 0.06em;
+        cursor: pointer;
+        clip-path: inset(50%);
+        opacity: 0;
+      }
+      .room-keys__button:focus-visible {
+        clip-path: none;
+        opacity: 1;
+        outline: 2px solid #2d2b28;
+        outline-offset: 3px;
+      }
+      .no-webgl .room-keys { display: none; }
       /* Spec colours are near-white on a near-white page; ink is used instead. */
       .loading {
         position: absolute;
@@ -424,6 +449,10 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
             <span class="edge-word__role" aria-live="off">placeholder role one</span>
           </span>
           <button class="edge-word edge-word--top edge-word--roleproxy" type="button" aria-label="Next role" disabled></button>
+          <div class="room-keys">
+            <button class="room-keys__button room-keys__laptop" type="button">Open the laptop</button>
+            <button class="room-keys__button room-keys__tv" type="button">Watch the TV</button>
+          </div>
           {
             hasRoom && (
               <div class="loading" role="progressbar" aria-label="Loading room" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
@@ -483,10 +512,12 @@ const hasRoom = assets.some((url) => /\/roomModel\.glb\?/.test(url));
       import { initRoomRect } from '../ui/roomRect';
       import { initLumaProbe } from '../ui/lumaProbe';
       import { initOverlay } from '../ui/overlay';
+      import { initRoomKeys } from '../ui/roomKeys';
 
       initSuite(document.querySelector<HTMLElement>('.suite'));
       initLabels(document.querySelector<HTMLElement>('.room-experience'));
       initOverlay(document.querySelector<HTMLElement>('.overlay'));
+      initRoomKeys(document.querySelector<HTMLElement>('.room-keys'));
 
       /** A throwaway canvas tells whether WebGL is there before the room is built. */
       function hasWebGL(): boolean {
