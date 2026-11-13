@@ -9,7 +9,8 @@ import { EVENTS } from './events';
 /** Analysis section 4.4. */
 const SMOOTHING = 0.005; // per millisecond
 const LIMITS = {
-  radius: { min: 10, max: 50 },
+  // Zooming out stops a little past the home view (radius 32), so the room never sits small in empty space.
+  radius: { min: 10, max: 36 },
   // Three walls now: orbit stays in front, and not so low that a side wall hides the room.
   phi: { min: 0.01, max: 0.42 * Math.PI },
   theta: { min: -0.22 * Math.PI, max: 0.22 * Math.PI },
