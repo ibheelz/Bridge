@@ -3,12 +3,58 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
     <title>Abiola Adeyeye</title>
-    <style>
+    <style is:global>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      html, body { width: 100%; height: 100%; background: #000; }
+      html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #010101;
+        overscroll-behavior: none;
+      }
+      .page {
+        position: fixed;
+        inset: 0;
+        background: #010101;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      .stage,
+      .room-experience {
+        position: absolute;
+        inset: 0;
+      }
+      .room-experience {
+        overflow: hidden;
+        background: radial-gradient(120% 90% at 50% 38%, #ffffff 0, #f1eee8 55%, #dcd7cf);
+      }
+      /* Labels will sit at z-index 1, behind this transparent canvas layer. */
+      .room-experience__target {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+      }
     </style>
   </head>
-  <body></body>
+  <body>
+    <main class="page">
+      <div class="stage">
+        <div class="room-experience">
+          <div id="room" class="room-experience__target"></div>
+        </div>
+      </div>
+    </main>
+    <script>
+      import Experience from '../room/Experience';
+
+      const target = document.getElementById('room');
+      if (target) new Experience({ targetElement: target });
+    </script>
+  </body>
 </html>
