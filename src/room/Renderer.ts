@@ -102,6 +102,7 @@ export default class Renderer {
 
   destroy(): void {
     this.afterRender.length = 0;
+    this.post = null;
     const canvas = this.instance.domElement;
     canvas.removeEventListener('webglcontextlost', this.onContextLost);
     canvas.removeEventListener('webglcontextrestored', this.onContextRestored);

@@ -210,7 +210,8 @@ export default class TVMode extends FlyMode {
     window.removeEventListener(EVENTS.tvToggle, this.onToggle);
     if (this.composer) {
       this.postOff();
-      this.bokeh?.dispose();
+      // The composer frees its two render targets and copy pass; each pass (bokeh's own targets and materials, output) is freed here.
+      for (const pass of this.composer.passes) pass.dispose();
       this.composer.dispose();
       this.composer = null;
       this.bokeh = null;
