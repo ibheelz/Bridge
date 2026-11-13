@@ -30,9 +30,13 @@ const CHAIR_Z = -0.05;
 const MUG: V3 = [-5.07, DESK_TOP, -1.37]; // centre of the mug's base, on the left desk
 const MUG_HEIGHT = 0.26;
 const SHOW_WHITEBOARD = false;
-/** Windows on the back wall: centre x of the left one (the right one mirrors it), size and sill. */
-const WINDOW_CENTER_X = -3.35;
-const WINDOW = { width: 2.1, sill: 2.4, height: 3.6, frame: 0.12, depth: 0.1 } as const;
+/**
+ * Windows on the back wall: square, level with the TV (same bottom and top),
+ * each centred in the stretch of wall between the TV and a side wall, so about
+ * 1.1 of wall shows on either side. `WINDOW_CENTER_X` is the left one; the right mirrors it.
+ */
+const WINDOW_CENTER_X = -4.47;
+const WINDOW = { width: 2.6, sill: 2.37, height: 2.6, frame: 0.12, depth: 0.1 } as const;
 
 /** World replaces this with clay (or a baked material) before anything renders. */
 const blank = new THREE.MeshBasicMaterial({ color: '#cccccc' });
@@ -64,7 +68,6 @@ const COLORS = {
   tableLegs: '#9c7b5e',
   sofa: '#6b8b72',
   sofaArms: '#56735d',
-  pegboard: '#d8b67c',
   laptop: '#a8adb4',
   windowFrame: '#f4f1ea',
   glass: '#a9cfe8',
@@ -216,10 +219,7 @@ function desk(side: Side, F: number) {
   // Facing into the room: +x for the left desk, -x for the right.
   const screenCenter: V3 = [sideX(side, W + 1.76), 3.145, 0.025];
   const screenRotation: V3 = [0, side === 'left' ? Math.PI / 2 : -Math.PI / 2, 0];
-  const decor = [
-    sideBox(side, [W + 0.4, 2.8, -HALF_Z], [W + 2.2, 4.4, -HALF_Z + 0.06], COLORS.pegboard), // pegboard, back wall
-  ];
-  return { workStation, retro, seat, screenCenter, screenRotation, decor };
+  return { workStation, retro, seat, screenCenter, screenRotation };
 }
 
 export function createPlaceholderRoom(): RoomSource {
@@ -295,8 +295,8 @@ export function createPlaceholderRoom(): RoomSource {
   // --- Windows on the back wall, either side of the TV ----------------------
   const windows = [WINDOW_CENTER_X, -WINDOW_CENTER_X].flatMap((x) => windowOnBackWall(x));
 
-  // --- Wall decor: a pegboard by each desk, and the windows --------------
-  const wallDecor = model('wallDecor', [-HALF_X + 1.3, 3.6, -HALF_Z], [...left.decor, ...right.decor, ...windows]);
+  // --- Wall decor: just the windows now ------------------------------------
+  const wallDecor = model('wallDecor', [WINDOW_CENTER_X, WINDOW.sill + WINDOW.height / 2, -HALF_Z], windows);
 
   // --- Small props --------------------------------------------------------
   const roomba = model('roomba', [-3, F, 4.1], [cylinder([-3, F, 4.1], 0.45, 0.18, COLORS.roomba)]);

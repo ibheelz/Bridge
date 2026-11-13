@@ -163,5 +163,7 @@ Build the room procedurally in code behind the same interfaces the GLB loader wi
 
 - Door removed, windows added (user request, 2026-11-13). The placeholder's `door` model is now an empty hinge node (the model and `Door.ts` stay, since `door` is a required model and the hidden whiteboard hangs from it). Two windows sit on the back wall either side of the TV (centres x = +/-3.35, 2.1 wide, sill at y 2.4, 3.6 tall): a pale blue glass panel in an off-white frame with a cross bar, drawn on the wall's surface (no hole is cut). Hidden meshes no longer take clicks (`Interactions`). Sizes are `WINDOW` and `WINDOW_CENTER_X` in `PlaceholderRoom.ts`. NOT checked in a browser.
 
+- Pegboards removed and windows made square (user request, 2026-11-13): windows are 2.6 x 2.6 (frame 0.12 extra all round), sill at y 2.37 so they line up with the TV's top and bottom, centred at x = +/-4.47, which leaves about 1.1 of plain wall between each window and the TV and between each window and the side wall.
+
 ## Next step
 Nothing left that can be done without the user. Next is the browser check (checklist in `auto-dev/HANDOFF.md`, section 8), then the blocked items at the top of this file.
