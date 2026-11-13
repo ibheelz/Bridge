@@ -90,7 +90,6 @@ const COLORS = {
   windowFrame: '#f4f1ea',
   // Building: white body with light blue details.
   building: '#f6f8fa',
-  seam: '#b7d6ec',
   corridor: '#cfe4f3',
   neighbourDoor: '#9cc8e6',
   railing: '#ffffff',
@@ -225,7 +224,7 @@ function backWall(F: number): THREE.Mesh[] {
 
 /**
  * The rest of the floor: closed neighbouring units either side (solid blocks
- * with a door each onto the corridor, and a seam between units), and the
+ * with a door each onto the corridor), and the
  * corridor along the front of the whole row, with a railing at its edge.
  */
 function building(F: number): THREE.Mesh[] {
@@ -238,11 +237,7 @@ function building(F: number): THREE.Mesh[] {
     const x0 = sign * inner;
     const x1 = sign * BUILDING_HALF_X;
     meshes.push(box([Math.min(x0, x1), F - 0.25, back], [Math.max(x0, x1), WALL_TOP, front], COLORS.building));
-    for (let i = 0; i <= UNITS_EACH_SIDE; i++) {
-      // Seam at each unit boundary (including the edges of this room), down the whole facade.
-      const seamX = sign * (inner + i * UNIT_WIDTH);
-      meshes.push(box([seamX - 0.1, GROUND_LEVEL, front], [seamX + 0.1, WALL_TOP, front + 0.06], COLORS.seam));
-      if (i === UNITS_EACH_SIDE) continue;
+    for (let i = 0; i < UNITS_EACH_SIDE; i++) {
       const doorX = sign * (inner + (i + 0.5) * UNIT_WIDTH);
       meshes.push(
         box(
