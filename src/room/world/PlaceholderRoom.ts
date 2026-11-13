@@ -82,6 +82,11 @@ const COLORS = {
   switch: '#353a40',
   server: '#2a2d32',
   driveBay: '#43474e',
+  silver: '#c9cdd3',
+  port: '#2a2d32',
+  buttonPower: '#4aa8ff',
+  buttonReset: '#2a2c30',
+  antenna: '#2f3237',
   cableBlue: '#3d7bd9',
   cableYellow: '#e0b43a',
   rug: '#9fb0c8',
@@ -643,11 +648,62 @@ function itSetup(): { workStation: THREE.Mesh[]; monitor: THREE.Mesh[]; screen: 
     );
   }
 
+  // Silver network gear stacked on top of the rack: a 24-port switch, an
+  // 8-port switch and a router with antennas. Each has ports with lights
+  // above them, and round power and reset buttons on the front (+z).
+  const gear: THREE.Mesh[] = [];
+  const devices = [
+    { name: '24-port switch', ports: 24, height: 0.09, inset: 0.05 },
+    { name: '8-port switch', ports: 8, height: 0.08, inset: 0.18 },
+    { name: 'router', ports: 4, height: 0.11, inset: 0.1 },
+  ];
+  let gearY = rack.y1;
+  const gearFront = rack.z1 - 0.02;
+  devices.forEach((device, d) => {
+    const x0 = rack.x0 + device.inset;
+    const x1 = rack.x1 - device.inset;
+    const y0 = gearY + 0.005;
+    const y1 = y0 + device.height;
+    gear.push(r([x0, y0, rack.z0 + 0.1], [x1, y1, gearFront], COLORS.silver));
+    // Ports in a row on the left part of the front, a light over each.
+    const portsEnd = x1 - 0.2;
+    const step = (portsEnd - (x0 + 0.06)) / device.ports;
+    for (let p = 0; p < device.ports; p++) {
+      const px = x0 + 0.06 + p * step;
+      const pw = Math.min(0.03, step * 0.75);
+      gear.push(r([px, y0 + 0.015, gearFront], [px + pw, y0 + 0.04, gearFront + 0.008], COLORS.port));
+      gear.push(
+        light(r([px + pw * 0.3, y1 - 0.025, gearFront], [px + pw * 0.7, y1 - 0.012, gearFront + 0.008]), {
+          kind: 'blink',
+          seed: 70 + d * 30 + p,
+          on: d === 2 ? '#4aa8ff' : '#3ddc84',
+        }),
+      );
+    }
+    // Buttons at the right end: power (blue ring light) and reset (dark).
+    const midY = (y0 + y1) / 2;
+    for (const [i, color] of [COLORS.buttonPower, COLORS.buttonReset].entries()) {
+      const button = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.016, 16), blank);
+      button.rotation.x = Math.PI / 2;
+      button.position.set(-(x1 - 0.13 + i * 0.07), midY, gearFront + 0.008);
+      gear.push(i === 0 ? light(button, { kind: 'steady', on: '#4aa8ff' }) : paint(button, color));
+    }
+    gearY = y1;
+  });
+  // Router antennas, standing up from the back of the top unit.
+  for (const ax of [0.25, 0.5, 0.75]) {
+    const x = rack.x0 + 0.1 + ax * (rack.x1 - rack.x0 - 0.2);
+    const antenna = paint(new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.02, 0.4, 8), blank), COLORS.antenna);
+    antenna.position.set(-x, gearY + 0.2, rack.z0 + 0.25);
+    gear.push(antenna);
+  }
+
   const workStation = [
     deskMat([-(W + 2.25), D, -1.4], [-(W + 1.7), D + 0.012, 1.4], 'it'), // long mat under the keyboard
     r([pc.x0, D, pc.z0], [pc.x1, pc.y1, pc.z1], COLORS.officePc),
     ...pcFront,
     ...rackParts,
+    ...gear,
   ];
   return { workStation, monitor, screen };
 }
